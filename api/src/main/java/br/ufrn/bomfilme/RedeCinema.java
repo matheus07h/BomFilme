@@ -7,6 +7,7 @@ import jakarta.persistence.GenerationType;
 import jakarta.persistence.Id;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.Generated;
 
 @Entity
 @Table(name = "rede_cinema")
@@ -19,6 +20,7 @@ public class RedeCinema {
     @Column(nullable = false, unique = true, length = 120)
     public String nome;
 
+    @Generated
     @Column(name = "criado_em", nullable = false, insertable = false, updatable = false)
     public OffsetDateTime criadoEm;
 

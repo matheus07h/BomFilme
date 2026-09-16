@@ -11,6 +11,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import org.hibernate.annotations.Generated;
 
 @Entity
 @Table(name = "cinema")
@@ -34,6 +35,7 @@ public class Cinema {
     @Column(nullable = false, length = 2)
     public String uf;
 
+    @Generated
     @Column(name = "criado_em", nullable = false, insertable = false, updatable = false)
     public OffsetDateTime criadoEm;
 
