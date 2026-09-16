@@ -34,4 +34,16 @@ cd BomFilme/api
 | `POST` | `/cinemas`      | Cria um cinema           |
 | `GET`  | `/cinemas/{id}` | Consulta um cinema       |
 
+## Respostas de erro
+
+As entradas de `POST /redes` e `POST /cinemas` são validadas com Hibernate Validator antes de chegar ao banco.
+
+| Status | Quando acontece |
+| ------ | --------------- |
+| `400`  | Corpo ausente, campo obrigatório em branco, texto acima de 120 caracteres, `redeId` ausente ou UF diferente de duas letras |
+| `404`  | Rede ou cinema inexistente, inclusive `redeId` inexistente ao criar um cinema; o corpo traz `{"mensagem": "..."}` |
+| `409`  | Nome de rede repetido ou nome de cinema repetido dentro da mesma rede; o corpo traz `{"mensagem": "..."}` |
+
+A unicidade é garantida pelas restrições da migração `V1`, e o `MapeadorDeErrosDePersistencia` converte a violação (SQLSTATE `23505`) em `409`. Assim, duas requisições simultâneas com o mesmo nome também resultam em uma criação e um conflito. A UF é gravada em maiúsculas e os espaços nas bordas dos textos são removidos.
+
 A especificação OpenAPI fica em `/q/openapi` e o Swagger UI em `/q/swagger-ui`.

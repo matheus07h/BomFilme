@@ -28,7 +28,7 @@ public class RepositorioDeCinemasPanache implements RepositorioDeCinemas, Panach
     @Transactional
     public Cinema criar(RedeCinema rede, String nome, String cidade, String uf) {
         Cinema cinema = new Cinema(rede, nome, cidade, uf);
-        persist(cinema);
+        persistAndFlush(cinema);
         return cinema;
     }
 }

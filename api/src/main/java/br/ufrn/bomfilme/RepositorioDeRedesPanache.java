@@ -23,7 +23,7 @@ public class RepositorioDeRedesPanache implements RepositorioDeRedes, PanacheRep
     @Transactional
     public RedeCinema criar(String nome) {
         RedeCinema rede = new RedeCinema(nome);
-        persist(rede);
+        persistAndFlush(rede);
         return rede;
     }
 }
