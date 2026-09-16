@@ -7,12 +7,13 @@ O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de fi
 ## Documentação
 
 - [Proposta do produto](docs/proposta.md): visão, MVP, entidades e decisões de arquitetura.
+- [Arquitetura](docs/arquitetura.md): serviços, responsabilidades, fluxo e infraestrutura local.
 - [Backlog inicial](docs/backlog.md): histórias e tarefas organizadas por prioridade e sprint.
 - [Registro de uso de IA](docs/uso-de-ia.md).
 
 ## Arquitetura
 
-Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado. Java concentra as regras do negócio, a persistência, as compras e a exclusividade dos assentos. A integração entre os serviços via gRPC será implementada na Sprint 2.
+Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado. Java concentra as regras do negócio, a persistência, as compras e a exclusividade dos assentos. A integração entre os serviços via gRPC será implementada na Sprint 2. As decisões e os limites dos componentes estão detalhados em [docs/arquitetura.md](docs/arquitetura.md).
 
 | Diretório | Responsabilidade |
 | --- | --- |
@@ -27,21 +28,37 @@ Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado.
 | --- | --- | --- |
 | Fernando Simonetti Meira Pires de Araújo | [@Nandosmpa](https://github.com/Nandosmpa) | Compras, usuários e testes; apoio à base Java na Sprint 0 |
 | Gabriel Eugênio Vitalino da Silva | [@geugenio](https://github.com/geugenio) | Microsserviço Go |
-| Hugo José de Lima Nunes | [@hugojoseof2](https://github.com/hugojoseof2) | Infraestrutura e processo |
+| Hugo José de Lima Nunes | [@Hugojoseof](https://github.com/Hugojoseof) | Infraestrutura e processo |
 | Matheus Henrique Ferreira da Silva | [@matheus07h](https://github.com/matheus07h) | API Java/Quarkus |
 
 Coorte B — apresentações online. Sem integração com outra disciplina.
 
 ## Execução local
 
-A configuração de execução está pendente das bases Java e Go. Os comandos de build, testes e execução entram neste guia após a configuração e a verificação do ambiente com `mise` e Docker Compose.
+Pré-requisitos: [mise](https://mise.jdx.dev/) e Docker Desktop.
+
+```bash
+mise install
+mise run build
+mise run test
+```
+
+Para construir as imagens e subir PostgreSQL, API e a base do serviço Go:
+
+```bash
+mise run up
+```
+
+A API fica disponível em `http://localhost:8080`. O serviço Go ainda encerra após validar sua inicialização, pois o servidor gRPC pertence à Sprint 2. Use `mise run down` para encerrar o ambiente. As portas e credenciais locais podem ser personalizadas copiando `.env.example` para `.env`.
+
+A task `mise run ci` executa lint, build e testes, na mesma ordem usada pelo GitHub Actions.
 
 ## Sprint 0
 
 O escopo desta etapa é o planejamento e a base dos dois serviços compilando, com CI passando. As funcionalidades do MVP pertencem às próximas sprints.
 
 - Proposta e backlog: organizados para revisão final.
-- Bases Java e Go, Docker Compose, tasks e CI: pendentes.
+- Bases Java e Go, Docker Compose, tasks e CI: configurados e validados localmente; falta confirmar o pipeline no repositório após integrar este trabalho.
 - GitHub Projects: criação e registro das estimativas pendentes.
 - Vídeo de cinco minutos: gravação e link pendentes.
 

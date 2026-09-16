@@ -1,0 +1,40 @@
+[tools]
+go = "1.27.1"
+java = "temurin-25"
+
+[tasks.build]
+description = "Compila a API Java e o servico Go"
+run = """
+./api/mvnw -B -f api/pom.xml package -DskipTests
+cd services && go build ./...
+"""
+
+[tasks.test]
+description = "Executa os testes da API Java e do servico Go"
+run = """
+./api/mvnw -B -f api/pom.xml test
+cd services && go test ./...
+"""
+
+[tasks.lint]
+description = "Valida os projetos Java e Go sem alterar arquivos"
+run = """
+./api/mvnw -B -f api/pom.xml validate
+cd services && go vet ./...
+"""
+
+[tasks.up]
+description = "Sobe o ambiente local com Docker Compose"
+run = "docker compose up --build"
+
+[tasks.down]
+description = "Encerra o ambiente local"
+run = "docker compose down"
+
+[tasks.ci]
+description = "Reproduz localmente as verificacoes do GitHub Actions"
+run = """
+mise run lint
+mise run build
+mise run test
+"""

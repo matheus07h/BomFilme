@@ -1,0 +1,57 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${BOMFILME_DB_NAME:-bomfilme}
+      POSTGRES_USER: ${BOMFILME_DB_USER:-bomfilme}
+      POSTGRES_PASSWORD: ${BOMFILME_DB_PASSWORD:-bomfilme}
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${BOMFILME_DB_PORT:-5432}:5432"
+    volumes:
+      - bomfilme-postgres:/var/lib/postgresql/data
+
+  api:
+    build:
+      context: ./api
+      dockerfile: src/main/docker/Dockerfile.jvm
+    environment:
+      BOMFILME_DB_URL: jdbc:postgresql://postgres:5432/${BOMFILME_DB_NAME:-bomfilme}
+      BOMFILME_DB_USER: ${BOMFILME_DB_USER:-bomfilme}
+      BOMFILME_DB_PASSWORD: ${BOMFILME_DB_PASSWORD:-bomfilme}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 15s
+    ports:
+      - "${BOMFILME_API_PORT:-8080}:8080"
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
+  pagamentos:
+    build:
+      context: ./services
+    depends_on:
+      api:
+        condition: service_healthy
+    read_only: true
+    security_opt:
+      - no-new-privileges:true
+    tmpfs:
+      - /tmp
+
+volumes:
+  bomfilme-postgres:
