@@ -1,0 +1,21 @@
+# Build multiestágio do serviço principal do BomFilme.
+# Referenciado pelo docker-compose.yml da raiz do monorepo.
+
+FROM maven:3.9-eclipse-temurin-25 AS build
+WORKDIR /projeto
+COPY pom.xml .
+RUN mvn -B -q dependency:go-offline
+COPY src ./src
+RUN mvn -B package -DskipTests
+
+FROM eclipse-temurin:25-jre
+WORKDIR /aplicacao
+COPY --from=build /projeto/target/quarkus-app/lib/ ./lib/
+COPY --from=build /projeto/target/quarkus-app/*.jar ./
+COPY --from=build /projeto/target/quarkus-app/app/ ./app/
+COPY --from=build /projeto/target/quarkus-app/quarkus/ ./quarkus/
+
+EXPOSE 8080
+ENV QUARKUS_PROFILE=prod
+# O --add-opens é exigido pelo jboss-threads no Java 24+.
+ENTRYPOINT ["java", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "-jar", "/aplicacao/quarkus-run.jar"]
