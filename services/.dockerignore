@@ -1,0 +1,5 @@
+.git
+bin/
+*.test
+coverage.out
+coverage.html

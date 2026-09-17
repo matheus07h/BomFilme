@@ -29,7 +29,7 @@ Definimos que o pagamento será simulado, sem cobrança real. Planejamos permiti
 
 ## 3. Backlog inicial
 
-Organizamos nosso backlog com histórias de usuário e tarefas técnicas, prioridades e critérios de aceitação em [backlog.md](backlog.md). O endereço do repositório público está pendente da criação na conta de um integrante do grupo, devido à suspensão da conta que hospedava o projeto. As estimativas iniciais aprovadas são Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. A publicação dos itens e dessas estimativas no GitHub Projects e a inclusão do link do quadro estão pendentes.
+Organizamos nosso backlog com histórias de usuário e tarefas técnicas, prioridades e critérios de aceitação em [backlog.md](backlog.md). O repositório público está em [matheus07h/BomFilme](https://github.com/matheus07h/BomFilme). As estimativas iniciais aprovadas são Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. A publicação dos itens e dessas estimativas no GitHub Projects e a inclusão do link do quadro estão pendentes.
 
 ## 4. Entidades principais
 

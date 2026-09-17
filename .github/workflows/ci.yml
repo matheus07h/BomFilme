@@ -1,0 +1,32 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verificar:
+    name: Build e testes Java e Go
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Baixar o repositorio
+        uses: actions/checkout@v6
+        with:
+          persist-credentials: false
+
+      - name: Instalar as ferramentas do projeto
+        uses: jdx/mise-action@v4
+        with:
+          cache: true
+
+      - name: Executar as verificacoes
+        run: mise run ci

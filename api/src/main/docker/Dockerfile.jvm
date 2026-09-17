@@ -10,12 +10,15 @@ RUN mvn -B package -DskipTests
 
 FROM eclipse-temurin:25-jre
 WORKDIR /aplicacao
-COPY --from=build /projeto/target/quarkus-app/lib/ ./lib/
-COPY --from=build /projeto/target/quarkus-app/*.jar ./
-COPY --from=build /projeto/target/quarkus-app/app/ ./app/
-COPY --from=build /projeto/target/quarkus-app/quarkus/ ./quarkus/
+RUN groupadd --system bomfilme \
+    && useradd --system --gid bomfilme --home-dir /aplicacao --shell /usr/sbin/nologin bomfilme
+COPY --from=build --chown=bomfilme:bomfilme /projeto/target/quarkus-app/lib/ ./lib/
+COPY --from=build --chown=bomfilme:bomfilme /projeto/target/quarkus-app/*.jar ./
+COPY --from=build --chown=bomfilme:bomfilme /projeto/target/quarkus-app/app/ ./app/
+COPY --from=build --chown=bomfilme:bomfilme /projeto/target/quarkus-app/quarkus/ ./quarkus/
 
 EXPOSE 8080
 ENV QUARKUS_PROFILE=prod
+USER bomfilme
 # O --add-opens é exigido pelo jboss-threads no Java 24+.
 ENTRYPOINT ["java", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "-jar", "/aplicacao/quarkus-run.jar"]
