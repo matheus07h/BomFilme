@@ -29,7 +29,7 @@ Definimos que o pagamento será simulado, sem cobrança real. Planejamos permiti
 
 ## 3. Backlog inicial
 
-Organizamos nosso backlog com histórias de usuário e tarefas técnicas, prioridades e critérios de aceitação em [backlog.md](backlog.md). O repositório público está em [matheus07h/BomFilme](https://github.com/matheus07h/BomFilme). As estimativas iniciais aprovadas são Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. A publicação dos itens e dessas estimativas no GitHub Projects e a inclusão do link do quadro estão pendentes.
+Organizamos nosso backlog com histórias de usuário e tarefas técnicas, prioridades e critérios de aceitação em [backlog.md](backlog.md). Publicamos todas as histórias no [GitHub Project do BomFilme](https://github.com/users/matheus07h/projects/3), com prioridade, sprint e responsável principal. Também registramos as três estimativas iniciais aprovadas: Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. O repositório público está em [matheus07h/BomFilme](https://github.com/matheus07h/BomFilme).
 
 ## 4. Entidades principais
 
@@ -53,7 +53,7 @@ Definimos que Java concentra as entidades e regras do negócio. A exclusividade 
 
 Fluxo: Java cria uma compra pendente e reserva o assento com segurança; solicita pagamento ao Go via gRPC; após aprovação, confirma a compra e gera o ingresso; após recusa, libera a reserva. Timeout ou falha de comunicação não confirma a compra automaticamente. Detalharemos recuperação e expiração durante a implementação desse fluxo na Sprint 2.
 
-Distribuímos a responsabilidade principal pela infraestrutura a Hugo: Docker Compose, tasks, CI e documentação. Também dividimos as contribuições e revisões entre os integrantes.
+Dividimos a infraestrutura, incluindo Docker Compose, tasks, CI e documentação, sob a responsabilidade principal de Hugo. Também dividimos as contribuições e revisões entre todos nós.
 
 ## 7. Equipe
 
@@ -64,7 +64,7 @@ Distribuímos a responsabilidade principal pela infraestrutura a Hugo: Docker Co
 | Hugo José de Lima Nunes | 20240062319 | Infraestrutura e processo | @Hugojoseof | hugoliman4@gmail.com |
 | Matheus Henrique Ferreira da Silva | 20240009311 | API Java/Quarkus | @matheus07h | matheushenriquefs07@gmail.com |
 
-Na Sprint 0, Matheus e Fernando são responsáveis pela base Java/Quarkus; Gabriel, pela base Go; Hugo, pela infraestrutura e pelo processo. Todos participamos das contribuições, revisões e preparação do vídeo.
+Na Sprint 0, dividimos o trabalho entre Matheus e Fernando na base Java/Quarkus, Gabriel na base Go e Hugo na infraestrutura e no processo. Todos participamos das contribuições, revisões e preparação do vídeo.
 
 ## 8. Coorte e integração
 

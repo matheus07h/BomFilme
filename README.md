@@ -1,5 +1,7 @@
 # BomFilme
 
+[![CI](https://github.com/matheus07h/BomFilme/actions/workflows/ci.yml/badge.svg)](https://github.com/matheus07h/BomFilme/actions/workflows/ci.yml)
+
 Projeto da disciplina DIM0547 — Desenvolvimento de Sistemas Web II, UFRN, período 2026.2.
 
 O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de filmes para espectadores e administradores de redes de cinema. O MVP inclui catálogo de filmes, sessões, assentos, compras com pagamento simulado e avaliações.
@@ -9,7 +11,7 @@ O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de fi
 - [Proposta do produto](docs/proposta.md): visão, MVP, entidades e decisões de arquitetura.
 - [Arquitetura](docs/arquitetura.md): serviços, responsabilidades, fluxo e infraestrutura local.
 - [Backlog inicial](docs/backlog.md): histórias e tarefas organizadas por prioridade e sprint.
-- [Registro de uso de IA](docs/uso-de-ia.md).
+- [GitHub Project](https://github.com/users/matheus07h/projects/3): quadro com prioridades, estimativas, sprints e responsáveis.
 
 ## Arquitetura
 
@@ -24,12 +26,12 @@ Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado.
 
 ## Equipe
 
-| Integrante | GitHub | Responsabilidade principal |
-| --- | --- | --- |
-| Fernando Simonetti Meira Pires de Araújo | [@Nandosmpa](https://github.com/Nandosmpa) | Compras, usuários e testes; apoio à base Java na Sprint 0 |
-| Gabriel Eugênio Vitalino da Silva | [@geugenio](https://github.com/geugenio) | Microsserviço Go |
-| Hugo José de Lima Nunes | [@Hugojoseof](https://github.com/Hugojoseof) | Infraestrutura e processo |
-| Matheus Henrique Ferreira da Silva | [@matheus07h](https://github.com/matheus07h) | API Java/Quarkus |
+| Integrante | Matrícula | GitHub | Responsabilidade principal |
+| --- | --- | --- | --- |
+| Fernando Simonetti Meira Pires de Araújo | 20240017897 | [@Nandosmpa](https://github.com/Nandosmpa) | Compras, usuários e testes; apoio à base Java na Sprint 0 |
+| Gabriel Eugênio Vitalino da Silva | 20240061349 | [@geugenio](https://github.com/geugenio) | Microsserviço Go |
+| Hugo José de Lima Nunes | 20240062319 | [@Hugojoseof](https://github.com/Hugojoseof) | Infraestrutura e processo |
+| Matheus Henrique Ferreira da Silva | 20240009311 | [@matheus07h](https://github.com/matheus07h) | API Java/Quarkus |
 
 Coorte B — apresentações online. Sem integração com outra disciplina.
 
@@ -57,10 +59,10 @@ A task `mise run ci` executa lint, build e testes, na mesma ordem usada pelo Git
 
 O escopo desta etapa é o planejamento e a base dos dois serviços compilando, com CI passando. As funcionalidades do MVP pertencem às próximas sprints.
 
-- Proposta e backlog: organizados para revisão final.
-- Bases Java e Go, Docker Compose, tasks e CI: configurados e validados localmente; falta confirmar o pipeline no repositório após integrar este trabalho.
-- GitHub Projects: criação e registro das estimativas pendentes.
-- Vídeo de cinco minutos: gravação e link pendentes.
+- Finalizamos a proposta e organizamos o backlog inicial.
+- Configuramos e validamos as bases Java e Go, o Docker Compose e as tasks de build, testes, lint, ambiente local e CI.
+- Mantemos o pipeline do GitHub Actions passando para os dois serviços.
+- Publicamos as histórias no [GitHub Project](https://github.com/users/matheus07h/projects/3), com prioridades, sprints, responsáveis e três estimativas iniciais.
 
 ## Referências da disciplina
 
