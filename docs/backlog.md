@@ -1,6 +1,6 @@
 # BomFilme — Backlog inicial
 
-Nosso backlog reúne as histórias de usuário e as tarefas técnicas do projeto, organizadas por prioridade. P1 é essencial, P2 é importante e P3 é desejável. A coluna Sprint indica a etapa de implementação; na Sprint 0, esses itens compõem o planejamento.
+Nosso backlog reúne as histórias de usuário e as tarefas técnicas do projeto, organizadas por prioridade. P1 é essencial, P2 é importante e P3 é desejável. A coluna Sprint indica a etapa de implementação; na Sprint 0, esses itens compõem o planejamento. Publicamos e acompanhamos todas as histórias no [GitHub Project do BomFilme](https://github.com/users/matheus07h/projects/3).
 
 | Prio | História ou tarefa | Critérios de aceitação | Sprint |
 | --- | --- | --- | --- |
@@ -20,4 +20,4 @@ Nosso backlog reúne as histórias de usuário e as tarefas técnicas do projeto
 | P2 | Como administrador, quero atribuir permissões por papel para restringir operações administrativas. | Permissões diferenciadas; usuário comum não acessa operações administrativas; evolução de autorização por recurso na final. | 3, com evolução na final |
 | P2 | Como administrador, quero moderar avaliações e gerenciar o catálogo em cartaz para manter informações adequadas. | Permite consultar, editar ou remover avaliações e administrar filmes em cartaz; política de edição pendente. | 3 |
 
-As estimativas iniciais aprovadas são Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. A publicação do quadro e dessas estimativas no GitHub Projects está pendente.
+Registramos no GitHub Project as estimativas iniciais aprovadas: Pequena para consulta de filmes, Pequena para consulta de cinemas e Média para consulta e seleção de assentos. Também definimos prioridade, sprint e responsável principal para cada item.
