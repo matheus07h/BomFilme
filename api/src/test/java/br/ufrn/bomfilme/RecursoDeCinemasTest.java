@@ -1,6 +1,7 @@
 package br.ufrn.bomfilme;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.empty;
 import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
@@ -44,6 +45,15 @@ class RecursoDeCinemasTest {
         return corpo;
     }
 
+    private static int criarCinema(int redeId, String nome) {
+        return given()
+                .contentType(ContentType.JSON)
+                .body(cinema(redeId, nome, "Natal", "RN"))
+                .when().post("/cinemas")
+                .then().statusCode(201)
+                .extract().path("id");
+    }
+
     @Test
     void criaUmCinemaVinculadoAUmaRede() {
         int redeId = criarRede();
@@ -73,7 +83,12 @@ class RecursoDeCinemasTest {
                 .then()
                 .statusCode(200)
                 .body("size()", is(1))
-                .body("[0].nome", is("Midway"));
+                .body("[0].id", is(cinemaId))
+                .body("[0].redeId", is(redeId))
+                .body("[0].nome", is("Midway"))
+                .body("[0].cidade", is("Natal"))
+                .body("[0].uf", is("RN"))
+                .body("[0].criadoEm", notNullValue());
     }
 
     @Test
@@ -92,6 +107,74 @@ class RecursoDeCinemasTest {
                 .then()
                 .statusCode(200)
                 .body("nome", hasItem(nome));
+    }
+
+    @Test
+    void paginaCinemasFiltradosPorRedeComOrdenacaoEstavel() {
+        int redeId = criarRede();
+        int primeiroId = criarCinema(redeId, nomeUnico("Primeiro cinema"));
+        int segundoId = criarCinema(redeId, nomeUnico("Segundo cinema"));
+        int terceiroId = criarCinema(redeId, nomeUnico("Terceiro cinema"));
+
+        given()
+                .queryParam("redeId", redeId)
+                .queryParam("pagina", 0)
+                .queryParam("tamanho", 2)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(200)
+                .body("size()", is(2))
+                .body("[0].id", is(primeiroId))
+                .body("[1].id", is(segundoId));
+
+        given()
+                .queryParam("redeId", redeId)
+                .queryParam("pagina", 1)
+                .queryParam("tamanho", 2)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(200)
+                .body("size()", is(1))
+                .body("[0].id", is(terceiroId));
+    }
+
+    @Test
+    void retornaListaVaziaQuandoAPaginaNaoTemCinemas() {
+        int redeId = criarRede();
+        criarCinema(redeId, nomeUnico("Cinema unico"));
+
+        given()
+                .queryParam("redeId", redeId)
+                .queryParam("pagina", 1)
+                .queryParam("tamanho", 20)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(200)
+                .body("$", empty());
+    }
+
+    @Test
+    void limitaOTamanhoMaximoDaPagina() {
+        given()
+                .queryParam("tamanho", RecursoDeCinemas.TAMANHO_MAXIMO + 1)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(400);
+    }
+
+    @Test
+    void recusaParametrosDePaginacaoInvalidos() {
+        given()
+                .queryParam("pagina", -1)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(400);
+
+        given()
+                .queryParam("tamanho", 0)
+                .when().get("/cinemas")
+                .then()
+                .statusCode(400);
     }
 
     @Test

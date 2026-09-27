@@ -29,7 +29,7 @@ class RepositorioDeRedesPanacheTest {
         RedeCinema rede = redes.criar("Rede com cinema");
         Cinema cinema = cinemas.criar(rede, "Praia Shopping", "Natal", "RN");
 
-        assertEquals(1, cinemas.porRede(rede.id).size());
+        assertEquals(1, cinemas.porRede(rede.id, 0, RecursoDeCinemas.TAMANHO_PADRAO).size());
         assertEquals(rede.id, cinemas.porId(cinema.id).orElseThrow().getRedeId());
     }
 }

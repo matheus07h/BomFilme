@@ -5,9 +5,9 @@ import java.util.Optional;
 
 public interface RepositorioDeCinemas {
 
-    List<Cinema> listar();
+    List<Cinema> listar(int pagina, int tamanho);
 
-    List<Cinema> porRede(long redeId);
+    List<Cinema> porRede(long redeId, int pagina, int tamanho);
 
     Optional<Cinema> porId(long id);
 

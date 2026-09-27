@@ -2,8 +2,11 @@ package br.ufrn.bomfilme;
 
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
+import jakarta.validation.constraints.Max;
+import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotNull;
 import jakarta.ws.rs.Consumes;
+import jakarta.ws.rs.DefaultValue;
 import jakarta.ws.rs.GET;
 import jakarta.ws.rs.POST;
 import jakarta.ws.rs.Path;
@@ -21,6 +24,9 @@ import java.util.Locale;
 @Consumes(MediaType.APPLICATION_JSON)
 public class RecursoDeCinemas {
 
+    static final int TAMANHO_PADRAO = 20;
+    static final int TAMANHO_MAXIMO = 100;
+
     @Inject
     RepositorioDeCinemas cinemas;
 
@@ -28,8 +34,16 @@ public class RecursoDeCinemas {
     RepositorioDeRedes redes;
 
     @GET
-    public List<Cinema> listar(@QueryParam("redeId") Long redeId) {
-        return redeId == null ? cinemas.listar() : cinemas.porRede(redeId);
+    public List<Cinema> listar(
+            @QueryParam("redeId") Long redeId,
+            @QueryParam("pagina") @DefaultValue("0")
+            @Min(value = 0, message = "pagina deve ser maior ou igual a zero") int pagina,
+            @QueryParam("tamanho") @DefaultValue("20")
+            @Min(value = 1, message = "tamanho deve ser maior ou igual a um")
+            @Max(value = TAMANHO_MAXIMO, message = "tamanho deve ser menor ou igual a 100") int tamanho) {
+        return redeId == null
+                ? cinemas.listar(pagina, tamanho)
+                : cinemas.porRede(redeId, pagina, tamanho);
     }
 
     @GET
