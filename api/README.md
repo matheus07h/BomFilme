@@ -30,7 +30,7 @@ cd BomFilme/api
 | `GET`  | `/redes`        | Lista as redes de cinema |
 | `POST` | `/redes`        | Cria uma rede            |
 | `GET`  | `/redes/{id}`   | Consulta uma rede        |
-| `GET`  | `/cinemas`      | Lista os cinemas         |
+| `GET`  | `/cinemas`      | Lista os cinemas com paginação e filtro opcional por rede |
 | `POST` | `/cinemas`      | Cria um cinema           |
 | `GET`  | `/cinemas/{id}` | Consulta um cinema       |
 
@@ -47,3 +47,15 @@ As entradas de `POST /redes` e `POST /cinemas` são validadas com Hibernate Vali
 A unicidade é garantida pelas restrições da migração `V1`, e o `MapeadorDeErrosDePersistencia` converte a violação (SQLSTATE `23505`) em `409`. Assim, duas requisições simultâneas com o mesmo nome também resultam em uma criação e um conflito. A UF é gravada em maiúsculas e os espaços nas bordas dos textos são removidos.
 
 A especificação OpenAPI fica em `/q/openapi` e o Swagger UI em `/q/swagger-ui`.
+
+### Consulta de cinemas
+
+`GET /cinemas` aceita os seguintes parâmetros de consulta:
+
+| Parâmetro | Padrão | Regra |
+| --- | --- | --- |
+| `redeId` | sem filtro | Retorna apenas os cinemas da rede informada |
+| `pagina` | `0` | Índice da página, começando em zero |
+| `tamanho` | `20` | Quantidade de cinemas por página, entre `1` e `100` |
+
+A listagem é ordenada por `id` para que a navegação entre páginas seja estável. Uma página sem resultados retorna `[]`. Parâmetros de paginação fora dos limites retornam `400`.
