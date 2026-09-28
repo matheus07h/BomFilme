@@ -1,10 +1,10 @@
-package br.ufrn.bomfilme.model;
+package br.ufrn.bomfilme;
 
 import jakarta.persistence.*;
 
 @Entity
-@Table(name="pessoa")
-public class Pessoa {
+@Table(name="genero")
+public class Genero {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     public Long id;

@@ -1,4 +1,4 @@
-package br.ufrn.bomfilme.model;
+package br.ufrn.bomfilme;
 
 import jakarta.persistence.*;
 
@@ -11,11 +11,12 @@ public class ElencoFilme {
 
     @ManyToOne
     @JoinColumn(name="filme_id", nullable=false)
+    @com.fasterxml.jackson.annotation.JsonIgnore
     public Filme filme;
 
     @ManyToOne
-    @JoinColumn(name="ator_id", nullable = false)
-    public Pessoa ator;
+    @JoinColumn(name="pessoa_id", nullable = false)
+    public Pessoa pessoa;
 
     @Column(nullable = false)
     public String personagem;

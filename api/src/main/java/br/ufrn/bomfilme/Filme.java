@@ -1,4 +1,4 @@
-package br.ufrn.bomfilme.model;
+package br.ufrn.bomfilme;
 
 import jakarta.persistence.*;
 
