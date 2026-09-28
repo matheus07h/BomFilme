@@ -2,19 +2,34 @@ package br.ufrn.bomfilme;
 
 import br.ufrn.bomfilme.dtos.response.FilmeTMDBResponse;
 import br.ufrn.bomfilme.dtos.response.ListarFilmesTMDBResponse;
+import io.quarkus.rest.client.reactive.ClientQueryParam;
 import jakarta.ws.rs.*;
+import jakarta.ws.rs.core.MediaType;
 import org.eclipse.microprofile.rest.client.annotation.ClientHeaderParam;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
 
 @RegisterRestClient(configKey = "tmdb-api")
-@Path("/movie")
-@ClientHeaderParam(name="authorization", value= "Bearer {tmdb.api.token}")
+@Path("/")
+@Produces(MediaType.APPLICATION_JSON)
+@Consumes(MediaType.APPLICATION_JSON)
+@ClientQueryParam(name = "language", value = "pt-BR")
+@ClientHeaderParam(name = "Authorization", value = "${tmdb.auth.token}")
 public interface ClienteTMDB {
-    @GET
-    @Path("/{id}")
-    FilmeTMDBResponse buscarPorId(@PathParam("id") Long id, @QueryParam("append_to_response") String appendToResponse);
 
     @GET
-    @Path("/popular")
-    ListarFilmesTMDBResponse listarPopulares();
+    @Path("/movie/{id}")
+    FilmeTMDBResponse buscarPorId(
+            @PathParam("id") Long id,
+            @QueryParam("append_to_response") String appendToResponse
+    );
+
+    @GET
+    @Path("/movie/popular")
+    ListarFilmesTMDBResponse listarPopulares(
+            @QueryParam("page") @DefaultValue("1") Integer page
+    );
+
+    @GET
+    @Path("/authentication")
+    String testarAutenticacao();
 }
