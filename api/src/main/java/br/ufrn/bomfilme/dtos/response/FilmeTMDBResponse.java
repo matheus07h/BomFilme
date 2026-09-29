@@ -24,5 +24,6 @@ public record FilmeTMDBResponse (
         Double voteAverage,
 
         List<GeneroTMDBResponse> genres,
-        CreditosTMDBResponse credits
+        CreditosTMDBResponse credits,
+        Double popularity
 ) {}
