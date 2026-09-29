@@ -29,6 +29,12 @@ public interface ClienteTMDB {
             @QueryParam("page") @DefaultValue("1") Integer page
     );
 
+    // TODO: expor busca/importação por nome quando houver front-end para o admin escolher entre os candidatos retornados
+    //  (ex.: Aladdin 1992 vs 2019). Ver ServicoDeFilme/RecursoDeFilme.
+    @GET
+    @Path("/search/movie")
+    ListarFilmesTMDBResponse buscarPorNome(@QueryParam("query") String nome, @QueryParam("page") @DefaultValue("1") Integer page);
+
     @GET
     @Path("/authentication")
     String testarAutenticacao();
