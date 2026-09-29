@@ -1,4 +1,4 @@
--- V2__criar_filmes_generos_pessoas_elenco.sql
+-- V3__criar_filmes_generos_pessoas_elenco.sql
 
 CREATE TABLE genero (
                         id BIGINT GENERATED ALWAYS AS IDENTITY PRIMARY KEY,
