@@ -1,6 +1,7 @@
 package br.ufrn.bomfilme;
 
 import jakarta.persistence.*;
+import org.hibernate.annotations.BatchSize;
 
 import java.time.LocalDate;
 import java.util.HashSet;
@@ -40,8 +41,10 @@ public class Filme {
     @Column(name="nota_media_sistema")
     public Double notaMediaSistema;
 
+    @BatchSize(size = 50)
     @ManyToMany
-    @JoinTable(name="filme_genero", joinColumns = @JoinColumn(name="filme_id"), inverseJoinColumns = @JoinColumn(name="genero_id"))
+    @JoinTable(name = "filme_genero", joinColumns = @JoinColumn(name = "filme_id"),
+            inverseJoinColumns = @JoinColumn(name = "genero_id"))
     public Set<Genero> generos = new HashSet<>();
 
     @ManyToMany
@@ -55,10 +58,6 @@ public class Filme {
     @OneToMany(mappedBy = "filme", cascade = CascadeType.ALL, orphanRemoval = true)
     public Set<ElencoFilme> elenco = new HashSet<>();
 
-    public Set<ElencoFilme> getElenco(){
-        if(this.elenco == null){
-            this.elenco = new HashSet<>();
-        }
-        return this.elenco;
-    }
+    @Column()
+    public Double popularidade;
 }
