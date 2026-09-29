@@ -1,16 +1,22 @@
 package br.ufrn.bomfilme;
 
 import br.ufrn.bomfilme.dtos.response.*;
+import br.ufrn.bomfilme.utils.FiltroDeFilmes;
+import br.ufrn.bomfilme.utils.Pagina;
+import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
+import jakarta.ws.rs.core.MediaType;
+import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.Comparator;
-import java.util.HashSet;
-import java.util.List;
 import java.util.Set;
+import java.util.function.Supplier;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -25,12 +31,13 @@ public class ServicoDeFilme {
     @Inject
     RepositorioDePessoas repositorioPessoas;
 
-    @Inject @RestClient ClienteTMDB clienteTMDB;
+    @Inject
+    @RestClient
+    ClienteTMDB clienteTMDB;
 
-    // ServicoDeFilme — a conversão precisa acontecer AQUI, dentro da transação
     @Transactional
     public FilmeResponse importarBasico(Long tmdbId) {
-        FilmeTMDBResponse dados = clienteTMDB.buscarPorId(tmdbId, null);
+        FilmeTMDBResponse dados = chamarTmdb(() -> clienteTMDB.buscarPorId(tmdbId, null));
         Filme filme = buscarOuCriar(tmdbId);
         preencherDadosBasicos(filme, dados);
         repositorio.persistir(filme);
@@ -38,17 +45,13 @@ public class ServicoDeFilme {
     }
 
     @Transactional
-    public Filme importarCompleto(Long tmdbId) {
-        FilmeTMDBResponse dados = clienteTMDB.buscarPorId(tmdbId, "credits");
+    public FilmeResponse importarCompleto(Long tmdbId) {
+        FilmeTMDBResponse dados = chamarTmdb(() -> clienteTMDB.buscarPorId(tmdbId, "credits"));
         Filme filme = buscarOuCriar(tmdbId);
         preencherDadosBasicos(filme, dados);
         preencherElencoEDiretores(filme, dados.credits());
         repositorio.persistir(filme);
-        return filme;
-    }
-
-    private Filme buscarOuCriar(Long tmdbId) {
-        return repositorio.buscarPorTmdbId(tmdbId).orElseGet(Filme::new);
+        return FilmeResponse.from(filme);
     }
 
     @Transactional
@@ -59,37 +62,87 @@ public class ServicoDeFilme {
     }
 
     @Transactional
-    public List<FilmeResponse> buscarPorTitulo(String titulo, int pagina, int tamanho) {
-        List<Filme> filmes = repositorio.buscarPorTitulo(titulo, pagina, tamanho);
-        return filmes.stream().map(FilmeResponse::from).collect(Collectors.toList());
+    public Pagina<FilmeResumoResponse> listar(FiltroDeFilmes filtro, int pagina, int tamanho) {
+        return repositorio.buscarPorFiltro(filtro, pagina, tamanho).mapear(FilmeResumoResponse::from);
+    }
+
+    public ResultadoSincronizacao sincronizarPopulares(int pagina) {
+        ListarFilmesTMDBResponse populares = chamarTmdb(() -> clienteTMDB.listarPopulares(pagina));
+        int atualizados = 0;
+        int ignorados = 0;
+        for (var item : populares.results()) {
+            boolean existia = atualizarPopularidadeSeExistir(item.id(), item.popularity());
+            if (existia) atualizados++; else ignorados++;
+        }
+        return new ResultadoSincronizacao(pagina, atualizados, ignorados);
+    }
+
+    @Transactional
+    public boolean atualizarPopularidadeSeExistir(Long tmdbId, Double popularidade) {
+        return repositorio.buscarPorTmdbId(tmdbId)
+                .map(filme -> { filme.popularidade = popularidade; return true; })
+                .orElse(false);
+    }
+
+    private <T> T chamarTmdb(Supplier<T> chamada) {
+        try {
+            return chamada.get();
+        } catch (WebApplicationException e) {
+            if (e.getResponse().getStatus() == 404) {
+                throw new NotFoundException("Não encontrado no TMDB");
+            }
+            throw new WebApplicationException("Falha ao consultar o TMDB", Response.Status.BAD_GATEWAY);
+        } catch (ProcessingException e) {
+            throw new WebApplicationException("TMDB indisponível", Response.Status.BAD_GATEWAY);
+        }
+    }
+
+    private Filme buscarOuCriar(Long tmdbId) {
+        return repositorio.buscarPorTmdbId(tmdbId).orElseGet(Filme::new);
+    }
+
+
+    // TODO: quando Sessao existir, trocar por soft delete (coluna "ativo") ou bloquear
+    //  a exclusão se houver sessões vinculadas — hoje é hard delete, seguro só porque
+    //  Filme ainda não tem nada dependendo dele além das tabelas de associação (cascade).
+    @Transactional
+    public void deletar(long id) {
+        boolean existia = repositorio.deletar(id);
+        if (!existia) {
+            throw new NotFoundException("Filme não encontrado");
+        }
     }
 
     private void preencherDadosBasicos(Filme filme, FilmeTMDBResponse dados) {
+        if (dados.releaseDate() == null) {
+            throw new WebApplicationException(
+                    "Filme sem data de lançamento no TMDB, não entra no catálogo", 422);
+        }
+
         filme.tmdbId = dados.id();
         filme.titulo = dados.title();
-        String tituloOriginal = dados.originalTitle();
-        filme.tituloOriginal = tituloOriginal;
+        filme.tituloOriginal = dados.originalTitle();
         filme.sinopse = dados.overview();
         filme.posterPath = dados.posterPath();
         filme.duracaoMinutos = dados.runtime();
         filme.dataLancamento = dados.releaseDate();
         filme.notaMediaTmdb = dados.voteAverage();
+        filme.popularidade = dados.popularity();
 
-        filme.generos = dados.genres().stream()
+
+        Set<Genero> generos = dados.genres() == null ? Set.of() : dados.genres().stream()
                 .map(this::buscarOuCriarGenero)
                 .collect(Collectors.toSet());
+        filme.generos.clear();
+        filme.generos.addAll(generos);
     }
 
+
     private void preencherElencoEDiretores(Filme filme, CreditosTMDBResponse credits) {
-        // 1. Garantir que as coleções não sejam nulas
-        if (filme.elenco == null) {
-            filme.elenco = new HashSet<>();
-        }
-        if (filme.diretores == null) {
-            filme.diretores = new HashSet<>();
+        if (credits == null) {
+            return;
         }
 
-        // 2. Atualizar Diretores (usando clear + addAll para manter a referência da coleção JPA)
         filme.diretores.clear();
         if (credits.crew() != null) {
             Set<Pessoa> novosDiretores = credits.crew().stream()
@@ -99,23 +152,18 @@ public class ServicoDeFilme {
             filme.diretores.addAll(novosDiretores);
         }
 
-        // 3. Atualizar Elenco
         filme.elenco.clear();
-
         if (credits.cast() != null) {
             credits.cast().stream()
                     .filter(membro -> membro.order() != null)
                     .sorted(Comparator.comparing(MembroElencoResponse::order))
                     .limit(6)
                     .forEach(membro -> {
-                        Pessoa pessoa = buscarOuCriarPessoa(membro.id(), membro.name());
-
                         ElencoFilme elencoFilme = new ElencoFilme();
                         elencoFilme.filme = filme;
-                        elencoFilme.pessoa = pessoa;
+                        elencoFilme.pessoa = buscarOuCriarPessoa(membro.id(), membro.name());
                         elencoFilme.personagem = membro.character();
                         elencoFilme.ordem = membro.order();
-
                         filme.elenco.add(elencoFilme);
                     });
         }
@@ -142,5 +190,4 @@ public class ServicoDeFilme {
                     return genero;
                 });
     }
-
 }
