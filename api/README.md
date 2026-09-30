@@ -25,37 +25,63 @@ cd BomFilme/api
 
 ## Endpoints
 
-| Método | Rota            | Descrição                |
-| ------ | --------------- | ------------------------ |
-| `GET`  | `/redes`        | Lista as redes de cinema |
-| `POST` | `/redes`        | Cria uma rede            |
-| `GET`  | `/redes/{id}`   | Consulta uma rede        |
-| `GET`  | `/cinemas`      | Lista os cinemas com paginação e filtro opcional por rede |
-| `POST` | `/cinemas`      | Cria um cinema           |
-| `GET`  | `/cinemas/{id}` | Consulta um cinema       |
+| Método   | Rota            | Descrição                                                   | Sucesso |
+| -------- | --------------- | ----------------------------------------------------------- | ------- |
+| `GET`    | `/redes`        | Lista as redes com paginação e filtro opcional por nome     | `200`   |
+| `POST`   | `/redes`        | Cria uma rede                                               | `201`   |
+| `GET`    | `/redes/{id}`   | Consulta uma rede                                           | `200`   |
+| `PUT`    | `/redes/{id}`   | Substitui os dados de uma rede                              | `200`   |
+| `DELETE` | `/redes/{id}`   | Remove uma rede sem cinemas                                 | `204`   |
+| `GET`    | `/cinemas`      | Lista os cinemas com paginação e filtros opcionais          | `200`   |
+| `POST`   | `/cinemas`      | Cria um cinema                                              | `201`   |
+| `GET`    | `/cinemas/{id}` | Consulta um cinema                                          | `200`   |
+| `PUT`    | `/cinemas/{id}` | Substitui os dados de um cinema, inclusive a rede           | `200`   |
+| `DELETE` | `/cinemas/{id}` | Remove um cinema sem salas                                  | `204`   |
+
+`POST` responde com o cabeçalho `Location` apontando para o recurso criado. `PUT` recebe o mesmo corpo do `POST` e é idempotente.
 
 ## Respostas de erro
 
-As entradas de `POST /redes` e `POST /cinemas` são validadas com Hibernate Validator antes de chegar ao banco.
+Os corpos de `POST` e `PUT` e os parâmetros de consulta são validados com Hibernate Validator antes de chegar ao banco.
 
 | Status | Quando acontece |
 | ------ | --------------- |
-| `400`  | Corpo ausente, campo obrigatório em branco, texto acima de 120 caracteres, `redeId` ausente ou UF diferente de duas letras |
-| `404`  | Rede ou cinema inexistente, inclusive `redeId` inexistente ao criar um cinema; o corpo traz `{"mensagem": "..."}` |
-| `409`  | Nome de rede repetido ou nome de cinema repetido dentro da mesma rede; o corpo traz `{"mensagem": "..."}` |
+| `400`  | Corpo ausente, campo obrigatório em branco, texto acima de 120 caracteres, `redeId` ausente ou não positivo, UF diferente de duas letras ou parâmetro de paginação fora dos limites |
+| `404`  | Rede ou cinema inexistente, inclusive `redeId` inexistente ao criar ou atualizar um cinema; o corpo traz `{"mensagem": "..."}` |
+| `409`  | Nome de rede repetido ou nome de cinema repetido dentro da mesma rede; remoção de rede que ainda tem cinemas; remoção de cinema que ainda tem salas; o corpo traz `{"mensagem": "..."}` |
 
 A unicidade é garantida pelas restrições da migração `V1`, e o `MapeadorDeErrosDePersistencia` converte a violação (SQLSTATE `23505`) em `409`. Assim, duas requisições simultâneas com o mesmo nome também resultam em uma criação e um conflito. A UF é gravada em maiúsculas e os espaços nas bordas dos textos são removidos.
 
 A especificação OpenAPI fica em `/q/openapi` e o Swagger UI em `/q/swagger-ui`.
 
-### Consulta de cinemas
+### Remoção e vínculos
 
-`GET /cinemas` aceita os seguintes parâmetros de consulta:
+Uma rede só é removida quando não tem cinemas, e um cinema só é removido quando não tem salas. A API verifica o vínculo antes de remover e responde `409` com uma mensagem específica. As chaves estrangeiras do banco continuam como garantia final: se um vínculo surgir entre a verificação e a remoção, a violação (SQLSTATE `23503`) também vira `409`. Para remover uma rede, remova antes os cinemas dela.
+
+### Listagens
+
+`GET /redes` e `GET /cinemas` paginam no banco (`LIMIT`/`OFFSET`) e ordenam por `id`, para que a navegação entre páginas seja estável. Uma página sem resultados retorna `[]`.
+
+Parâmetros comuns:
 
 | Parâmetro | Padrão | Regra |
 | --- | --- | --- |
-| `redeId` | sem filtro | Retorna apenas os cinemas da rede informada |
 | `pagina` | `0` | Índice da página, começando em zero |
-| `tamanho` | `20` | Quantidade de cinemas por página, entre `1` e `100` |
+| `tamanho` | `20` | Quantidade de itens por página, entre `1` e `100` |
 
-A listagem é ordenada por `id` para que a navegação entre páginas seja estável. Uma página sem resultados retorna `[]`. Parâmetros de paginação fora dos limites retornam `400`.
+Filtros de `GET /redes`:
+
+| Parâmetro | Regra |
+| --- | --- |
+| `nome` | Busca parcial, sem diferenciar maiúsculas de minúsculas; até 120 caracteres |
+
+Filtros de `GET /cinemas`, combináveis entre si:
+
+| Parâmetro | Regra |
+| --- | --- |
+| `redeId` | Retorna apenas os cinemas da rede informada; deve ser positivo |
+| `nome` | Busca parcial, sem diferenciar maiúsculas de minúsculas; até 120 caracteres |
+| `cidade` | Busca parcial, sem diferenciar maiúsculas de minúsculas; até 120 caracteres |
+| `uf` | Igualdade exata, sem diferenciar maiúsculas de minúsculas; duas letras |
+
+Parâmetros fora dessas regras retornam `400`.
