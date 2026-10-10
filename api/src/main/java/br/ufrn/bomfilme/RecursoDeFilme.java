@@ -10,22 +10,12 @@ import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.Pattern;
 import jakarta.validation.constraints.Size;
 import jakarta.ws.rs.*;
-import jakarta.ws.rs.core.MediaType;
-import org.eclipse.microprofile.rest.client.inject.RestClient;
-
-import java.util.List;
 
 @Path("/filmes")
 public class RecursoDeFilme {
     static final int TAMANHO_MAXIMO = 100;
     @Inject
     ServicoDeFilme servico;
-
-    @Inject
-    @RestClient
-    ClienteTMDB clienteTMDB;
-    @Inject
-    RepositorioDeFilmes repositorio;
 
     @POST
     @Path("/importar-basico/{tmdbId}")
@@ -36,13 +26,6 @@ public class RecursoDeFilme {
     @Path("/importar-completo/{tmdbId}")
     public FilmeResponse importarCompleto(@PathParam("tmdbId") Long tmdbId) {
         return servico.importarCompleto(tmdbId);
-    }
-
-    @GET
-    @Path("/testar-conexao")
-    @Produces(MediaType.APPLICATION_JSON)
-    public String testarConexaoTMDB() {
-        return clienteTMDB.testarAutenticacao();
     }
 
     @GET

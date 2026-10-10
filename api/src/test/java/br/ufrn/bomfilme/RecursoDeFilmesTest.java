@@ -17,11 +17,18 @@ import br.ufrn.bomfilme.dtos.response.MembroElencoResponse;
 import br.ufrn.bomfilme.dtos.response.ResumoFilmeTMDBResponse;
 
 import java.time.LocalDate;
+import java.time.OffsetDateTime;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.quarkus.test.InjectMock;
+import io.quarkus.narayana.jta.QuarkusTransaction;
 import io.quarkus.test.junit.QuarkusTest;
+import jakarta.inject.Inject;
+import jakarta.persistence.EntityManager;
+import jakarta.ws.rs.ProcessingException;
+import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
 
@@ -36,6 +43,9 @@ public class RecursoDeFilmesTest {
     @InjectMock
     @RestClient
     ClienteTMDB clienteTMDB;
+
+    @Inject
+    EntityManager em;
 
     private long tmdbIdUnico() {
         return PROXIMO_TMDB_ID.incrementAndGet();
@@ -118,7 +128,32 @@ public class RecursoDeFilmesTest {
         given()
                 .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
                 .then()
-                .statusCode(422);
+                .statusCode(422)
+                .body("mensagem", is("Filme sem data de lançamento no TMDB, não entra no catálogo"));
+    }
+
+    @Test
+    void retornaErroJsonQuandoTmdbRespondeComFalha() {
+        long tmdbId = tmdbIdUnico();
+        when(clienteTMDB.buscarPorId(eq(tmdbId), isNull()))
+                .thenThrow(new WebApplicationException(503));
+
+        given()
+                .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
+                .then().statusCode(502)
+                .body("mensagem", is("Falha ao consultar o TMDB"));
+    }
+
+    @Test
+    void retornaErroJsonQuandoTmdbEstaIndisponivel() {
+        long tmdbId = tmdbIdUnico();
+        when(clienteTMDB.buscarPorId(eq(tmdbId), isNull()))
+                .thenThrow(new ProcessingException("Falha de conexão"));
+
+        given()
+                .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
+                .then().statusCode(502)
+                .body("mensagem", is("TMDB indisponível"));
     }
 
     @Test
@@ -213,6 +248,35 @@ public class RecursoDeFilmesTest {
                 .then()
                 .statusCode(404)
                 .body("mensagem", notNullValue());
+    }
+
+    @Test
+    void impedeDeletarFilmeComSessaoVinculada() {
+        int id = importarBasico(tmdbIdUnico(), "Filme Com Sessão");
+        long sessaoId = QuarkusTransaction.requiringNew().call(() -> {
+            RedeCinema rede = new RedeCinema("Rede " + UUID.randomUUID());
+            em.persist(rede);
+            Cinema cinema = new Cinema(rede, "Cinema", "Natal", "RN");
+            em.persist(cinema);
+            Sala sala = new Sala(cinema, "Sala");
+            em.persist(sala);
+            Sessao sessao = new Sessao(sala, (long) id, OffsetDateTime.now().plusDays(1));
+            em.persist(sessao);
+            return sessao.id;
+        });
+
+        given()
+                .when().delete("/filmes/{id}", id)
+                .then().statusCode(409)
+                .body("mensagem", is("operação conflita com registros vinculados"));
+
+        given()
+                .when().get("/filmes/{id}", id)
+                .then().statusCode(200);
+
+        given()
+                .when().get("/sessoes/{id}/assentos", sessaoId)
+                .then().statusCode(200);
     }
 
     @Test

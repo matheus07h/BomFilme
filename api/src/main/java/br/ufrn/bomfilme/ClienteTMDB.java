@@ -35,7 +35,4 @@ public interface ClienteTMDB {
     @Path("/search/movie")
     ListarFilmesTMDBResponse buscarPorNome(@QueryParam("query") String nome, @QueryParam("page") @DefaultValue("1") Integer page);
 
-    @GET
-    @Path("/authentication")
-    String testarAutenticacao();
 }

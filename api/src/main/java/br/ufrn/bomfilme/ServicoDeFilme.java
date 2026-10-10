@@ -3,7 +3,6 @@ package br.ufrn.bomfilme;
 import br.ufrn.bomfilme.dtos.response.*;
 import br.ufrn.bomfilme.utils.FiltroDeFilmes;
 import br.ufrn.bomfilme.utils.Pagina;
-import io.quarkus.logging.Log;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
@@ -91,10 +90,17 @@ public class ServicoDeFilme {
             if (e.getResponse().getStatus() == 404) {
                 throw new NotFoundException("Não encontrado no TMDB");
             }
-            throw new WebApplicationException("Falha ao consultar o TMDB", Response.Status.BAD_GATEWAY);
+            throw erroHttp(502, "Falha ao consultar o TMDB");
         } catch (ProcessingException e) {
-            throw new WebApplicationException("TMDB indisponível", Response.Status.BAD_GATEWAY);
+            throw erroHttp(502, "TMDB indisponível");
         }
+    }
+
+    private static WebApplicationException erroHttp(int status, String mensagem) {
+        return new WebApplicationException(Response.status(status)
+                .type(MediaType.APPLICATION_JSON)
+                .entity(new Erro(mensagem))
+                .build());
     }
 
     private Filme buscarOuCriar(Long tmdbId) {
@@ -102,9 +108,7 @@ public class ServicoDeFilme {
     }
 
 
-    // TODO: quando Sessao existir, trocar por soft delete (coluna "ativo") ou bloquear
-    //  a exclusão se houver sessões vinculadas — hoje é hard delete, seguro só porque
-    //  Filme ainda não tem nada dependendo dele além das tabelas de associação (cascade).
+    // A FK de sessao.filme_id bloqueia a exclusão de filmes com sessões vinculadas.
     @Transactional
     public void deletar(long id) {
         boolean existia = repositorio.deletar(id);
@@ -115,8 +119,7 @@ public class ServicoDeFilme {
 
     private void preencherDadosBasicos(Filme filme, FilmeTMDBResponse dados) {
         if (dados.releaseDate() == null) {
-            throw new WebApplicationException(
-                    "Filme sem data de lançamento no TMDB, não entra no catálogo", 422);
+            throw erroHttp(422, "Filme sem data de lançamento no TMDB, não entra no catálogo");
         }
 
         filme.tmdbId = dados.id();
