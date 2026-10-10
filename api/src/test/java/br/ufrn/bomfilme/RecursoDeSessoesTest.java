@@ -10,12 +10,16 @@ import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
 import jakarta.persistence.EntityManager;
 import java.time.OffsetDateTime;
+import java.time.LocalDate;
 import java.util.UUID;
+import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 /** Testes de ponta a ponta do recurso /sessoes/{id}/assentos (issue #6). */
 @QuarkusTest
 class RecursoDeSessoesTest {
+
+    private static final AtomicLong PROXIMO_TMDB_ID = new AtomicLong(1_000_000);
 
     @Inject
     EntityManager em;
@@ -47,7 +51,15 @@ class RecursoDeSessoesTest {
 
     private Sessao criarSessao(Sala sala) {
         return QuarkusTransaction.requiringNew().call(() -> {
-            Sessao sessao = new Sessao(sala, 1L, OffsetDateTime.now().plusDays(1));
+            Filme filme = new Filme();
+            filme.tmdbId = PROXIMO_TMDB_ID.incrementAndGet();
+            filme.titulo = nomeUnico("Filme");
+            filme.tituloOriginal = filme.titulo;
+            filme.sinopse = "Sinopse de teste";
+            filme.dataLancamento = LocalDate.of(2020, 1, 1);
+            filme.notaMediaTmdb = 7.0;
+            em.persist(filme);
+            Sessao sessao = new Sessao(sala, filme.id, OffsetDateTime.now().plusDays(1));
             em.persist(sessao);
             return sessao;
         });

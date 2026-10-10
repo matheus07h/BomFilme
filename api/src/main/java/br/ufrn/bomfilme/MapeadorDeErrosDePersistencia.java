@@ -9,7 +9,7 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.jboss.logging.Logger;
 
 /**
- * Traduz violações de unicidade do banco em 409 Conflict.
+ * Traduz violações de unicidade e de chave estrangeira do banco em 409 Conflict.
  *
  * A regra de unicidade fica no próprio banco (restrições da migração V1), o que
  * também cobre duas requisições simultâneas tentando criar o mesmo registro.
@@ -24,12 +24,19 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
     /** Código SQLSTATE do PostgreSQL para unique_violation. */
     static final String VIOLACAO_DE_UNICIDADE = "23505";
 
+    /** Código SQLSTATE do PostgreSQL para foreign_key_violation. */
+    static final String VIOLACAO_DE_CHAVE_ESTRANGEIRA = "23503";
+
     @Override
     public Response toResponse(PersistenceException excecao) {
         ConstraintViolationException violacao = procurarViolacao(excecao);
 
         if (violacao != null && VIOLACAO_DE_UNICIDADE.equals(violacao.getSQLState())) {
             return resposta(Response.Status.CONFLICT, "já existe um registro com esses dados");
+        }
+
+        if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
+            return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
         }
 
         LOG.error("Erro de persistência não tratado", excecao);

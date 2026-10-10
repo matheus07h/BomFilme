@@ -5,12 +5,10 @@ import br.ufrn.bomfilme.utils.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
-import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -67,6 +65,10 @@ public class RepositorioDeFilmesPanache implements  RepositorioDeFilmes, Panache
     @Override
     @Transactional
     public boolean deletar(long id){
-        return deleteById(id);
+        boolean existia = deleteById(id);
+        if (existia) {
+            flush();
+        }
+        return existia;
     }
 }
