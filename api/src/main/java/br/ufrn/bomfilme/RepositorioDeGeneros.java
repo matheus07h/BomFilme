@@ -1,7 +1,5 @@
 package br.ufrn.bomfilme;
 
-import br.ufrn.bomfilme.dtos.response.GeneroResponse;
-
 import java.util.List;
 import java.util.Optional;
 

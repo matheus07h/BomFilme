@@ -1,6 +1,5 @@
 package br.ufrn.bomfilme;
 
-import br.ufrn.bomfilme.dtos.response.GeneroResponse;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
