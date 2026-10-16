@@ -8,6 +8,10 @@
 | Migrações | Flyway        |
 | Testes    | JUnit 5       |
 
+Um módulo Maven por camada: `dominio`, `aplicacao` e `adaptadores`. As convenções de
+cada uma e o roteiro para adicionar um caso de uso estão em
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Pré-requisitos
 
 - JDK 25

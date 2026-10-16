@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>br.ufrn.bomfilme</groupId>
+    <artifactId>bomfilme-api</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+  <artifactId>dominio</artifactId>
+
+  <!--
+    Sem dependências, de propósito. O bloco vazio não é descuido: é a regra de
+    arquitetura escrita no lugar onde o compilador a aplica. Enquanto ele estiver
+    vazio, nenhum arquivo deste módulo consegue importar Jakarta, Hibernate, Quarkus
+    ou Jackson — o código simplesmente não compila.
+
+    Antes de adicionar algo aqui, pergunte se o conceito é do negócio ou da
+    infraestrutura. Se for da infraestrutura, o lugar é um adaptador.
+  -->
+  <dependencies>
+  </dependencies>
+</project>

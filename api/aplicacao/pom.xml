@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+
+  <parent>
+    <groupId>br.ufrn.bomfilme</groupId>
+    <artifactId>bomfilme-api</artifactId>
+    <version>0.1.0</version>
+  </parent>
+
+  <artifactId>aplicacao</artifactId>
+
+  <!--
+    Os casos de uso alcançam o domínio e mais nada do projeto. Das APIs externas, só
+    as de injeção: `@ApplicationScoped` e `@Inject` são como o CDI liga as peças, e não
+    carregam conhecimento de HTTP nem de banco. Note que não há Jakarta REST, JPA nem
+    Hibernate aqui — um caso de uso que precisasse deles estaria no lugar errado.
+  -->
+  <dependencies>
+    <dependency>
+      <groupId>br.ufrn.bomfilme</groupId>
+      <artifactId>dominio</artifactId>
+    </dependency>
+
+    <dependency>
+      <groupId>jakarta.enterprise</groupId>
+      <artifactId>jakarta.enterprise.cdi-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.inject</groupId>
+      <artifactId>jakarta.inject-api</artifactId>
+    </dependency>
+  </dependencies>
+
+  <build>
+    <plugins>
+      <!--
+        O Quarkus descobre beans CDI por índice Jandex. No módulo da aplicação isso é
+        automático; num módulo separado, sem este índice os serviços daqui não seriam
+        encontrados e a injeção falharia no arranque.
+      -->
+      <plugin>
+        <groupId>io.smallrye</groupId>
+        <artifactId>jandex-maven-plugin</artifactId>
+        <version>${jandex-plugin.version}</version>
+        <executions>
+          <execution>
+            <id>make-index</id>
+            <goals>
+              <goal>jandex</goal>
+            </goals>
+          </execution>
+        </executions>
+      </plugin>
+    </plugins>
+  </build>
+</project>
