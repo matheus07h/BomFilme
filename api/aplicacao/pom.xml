@@ -40,26 +40,4 @@
     </dependency>
   </dependencies>
 
-  <build>
-    <plugins>
-      <!--
-        O Quarkus descobre beans CDI por índice Jandex. No módulo da aplicação isso é
-        automático; num módulo separado, sem este índice os serviços daqui não seriam
-        encontrados e a injeção falharia no arranque.
-      -->
-      <plugin>
-        <groupId>io.smallrye</groupId>
-        <artifactId>jandex-maven-plugin</artifactId>
-        <version>${jandex-plugin.version}</version>
-        <executions>
-          <execution>
-            <id>make-index</id>
-            <goals>
-              <goal>jandex</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-    </plugins>
-  </build>
 </project>

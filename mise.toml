@@ -26,6 +26,17 @@ run = """
 cd services && go vet ./...
 """
 
+[tasks.dev]
+description = "Sobe a API em modo de desenvolvimento, com Live Coding"
+# O plugin do Quarkus vive no modulo `adaptadores`, nao no agregador, entao
+# `quarkus:dev` na raiz de api/ nao resolve o prefixo. Os modulos de dentro vao
+# para o repositorio local primeiro, e o dev mode roda de dentro do modulo que
+# empacota.
+run = """
+./api/mvnw -B -f api/pom.xml install -DskipTests -Dquarkus.build.skip=true
+cd api/adaptadores && ../mvnw quarkus:dev
+"""
+
 [tasks.up]
 description = "Sobe o ambiente local com Docker Compose"
 run = "docker compose up --build"

@@ -19,13 +19,32 @@ cada uma e o roteiro para adicionar um caso de uso estão em
 
 ## Comandos
 
-```bash
-cd BomFilme/api
+Da raiz do monorepo:
 
-./mvnw package -DskipTests   # compila
-./mvnw verify                # sobe o PostgreSQL, aplica as migrações e roda os testes
-./mvnw quarkus:dev           # modo de desenvolvimento em http://localhost:8080
+```bash
+mise run build   # compila os três módulos
+mise run test    # sobe o PostgreSQL, aplica as migrações e roda os testes
+mise run dev     # modo de desenvolvimento em http://localhost:8080, com Live Coding
 ```
+
+Direto pelo Maven, de `BomFilme/api`:
+
+```bash
+./mvnw package -DskipTests   # compila os três módulos
+./mvnw verify                # sobe o PostgreSQL, aplica as migrações e roda os testes
+```
+
+O modo de desenvolvimento precisa de dois passos. `api/` é um agregador e o plugin do
+Quarkus vive no módulo `adaptadores`, então `./mvnw quarkus:dev` aqui falha com
+"No plugin found for prefix 'quarkus'":
+
+```bash
+# publica dominio e aplicacao no repositório local
+./mvnw install -DskipTests -Dquarkus.build.skip=true
+cd adaptadores && ../mvnw quarkus:dev
+```
+
+`mise run dev` encapsula esses dois passos.
 
 ## Endpoints
 

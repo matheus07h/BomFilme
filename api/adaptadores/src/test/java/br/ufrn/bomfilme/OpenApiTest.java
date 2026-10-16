@@ -1,6 +1,7 @@
 package br.ufrn.bomfilme;
 
 import static io.restassured.RestAssured.given;
+import static org.hamcrest.Matchers.allOf;
 import static org.hamcrest.Matchers.everyItem;
 import static org.hamcrest.Matchers.hasItems;
 import static org.hamcrest.Matchers.hasKey;
@@ -105,5 +106,38 @@ class OpenApiTest {
     @Test
     void aSwaggerUiEstaAcessivel() {
         given().when().get("/q/swagger-ui").then().statusCode(200);
+    }
+
+    /**
+     * Os registros de domínio têm schema com os campos, não um objeto vazio.
+     *
+     * <p>Eles vêm de outro módulo Maven, e o gerador do OpenAPI precisa conseguir
+     * introspectá-los. Sem este teste, uma falha de indexação esvaziaria os schemas e a
+     * especificação passaria a mentir sobre o contrato sem nada falhar.
+     */
+    @Test
+    void osSchemasDosRegistrosDeDominioTrazemOsCampos() {
+        given()
+                .accept("application/json")
+                .when().get("/q/openapi")
+                .then()
+                .statusCode(200)
+                .body("components.schemas.RedeCinema.properties", allOf(
+                        hasKey("id"), hasKey("nome"), hasKey("criadoEm")))
+                .body("components.schemas.Cinema.properties", allOf(
+                        hasKey("id"), hasKey("redeId"), hasKey("nome"), hasKey("cidade"), hasKey("uf")))
+                .body("components.schemas.Sala.properties", allOf(
+                        hasKey("id"), hasKey("cinemaId"), hasKey("nome")))
+                .body("components.schemas.Assento.properties", allOf(
+                        hasKey("id"), hasKey("salaId"), hasKey("fileira"), hasKey("numero")))
+                .body("components.schemas.Sessao.properties", allOf(
+                        hasKey("id"), hasKey("salaId"), hasKey("filmeId"), hasKey("inicio"), hasKey("fim")))
+                .body("components.schemas.AssentoDisponibilidade.properties", allOf(
+                        hasKey("id"), hasKey("fileira"), hasKey("numero"), hasKey("disponivel")))
+                .body("components.schemas.Pagina.properties", allOf(
+                        hasKey("itens"), hasKey("pagina"), hasKey("tamanho"),
+                        hasKey("total"), hasKey("totalPaginas")))
+                .body("components.schemas.ResultadoSincronizacao.properties", allOf(
+                        hasKey("pagina"), hasKey("atualizados"), hasKey("ignorados")));
     }
 }
