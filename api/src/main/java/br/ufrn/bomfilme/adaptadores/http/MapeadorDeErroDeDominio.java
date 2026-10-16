@@ -21,6 +21,7 @@ public class MapeadorDeErroDeDominio implements ExceptionMapper<ErroDeDominio> {
             case ErroDeDominio.Conflito e -> Problemas.conflito(e.getMessage());
             case ErroDeDominio.RegraViolada e -> Problemas.naoProcessavel(e.getMessage());
             case ErroDeDominio.ServicoExternoIndisponivel e -> Problemas.servicoIndisponivel(e.getMessage());
+            case ErroDeDominio.FalhaInesperada e -> Problemas.erroInterno(e.getMessage());
         };
     }
 }

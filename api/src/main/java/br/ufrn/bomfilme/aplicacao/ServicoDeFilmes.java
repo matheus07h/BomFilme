@@ -1,6 +1,7 @@
 package br.ufrn.bomfilme.aplicacao;
 
 import br.ufrn.bomfilme.dominio.CatalogoExternoDeFilmes;
+import br.ufrn.bomfilme.dominio.CreditosDoCatalogo;
 import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import br.ufrn.bomfilme.dominio.Filme;
 import br.ufrn.bomfilme.dominio.FilmeDoCatalogo;
@@ -16,8 +17,10 @@ import br.ufrn.bomfilme.dominio.RepositorioDePessoas;
 import br.ufrn.bomfilme.dominio.ResultadoSincronizacao;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Optional;
 
 /** Casos de uso do catálogo de filmes. */
 @ApplicationScoped
@@ -78,19 +81,24 @@ public class ServicoDeFilmes {
         return new ResultadoSincronizacao(pagina, atualizados, populares.size() - atualizados);
     }
 
-    private Filme importar(FilmeDoCatalogo dados) {
+    /**
+     * Grava o filme importado.
+     *
+     * <p>É uma transação só: resolver um gênero ou uma pessoa cria registro, e sem a
+     * fronteira aqui esses registros ficariam gravados mesmo que a gravação do filme
+     * falhasse depois.
+     */
+    @Transactional
+    Filme importar(FilmeDoCatalogo dados) {
         if (dados.dataLancamento() == null) {
             throw new ErroDeDominio.RegraViolada(
                     "Filme sem data de lançamento no TMDB, não entra no catálogo");
         }
 
-        Long idLocal = filmes.porTmdbId(dados.idExterno()).map(Filme::id).orElse(null);
-        Double notaDoSistema = filmes.porTmdbId(dados.idExterno())
-                .map(Filme::notaMediaSistema)
-                .orElse(null);
+        Optional<Filme> existente = filmes.porTmdbId(dados.idExterno());
 
         return filmes.salvar(new Filme(
-                idLocal,
+                existente.map(Filme::id).orElse(null),
                 dados.idExterno(),
                 dados.titulo(),
                 dados.tituloOriginal(),
@@ -99,11 +107,32 @@ public class ServicoDeFilmes {
                 dados.duracaoMinutos(),
                 dados.dataLancamento(),
                 dados.notaMedia(),
-                notaDoSistema,
+                // A nota do sistema é dos nossos usuários: o catálogo externo não a dita.
+                existente.map(Filme::notaMediaSistema).orElse(null),
                 dados.popularidade(),
                 resolverGeneros(dados),
-                resolverDiretores(dados),
-                resolverElenco(dados)));
+                diretoresPara(dados, existente),
+                elencoPara(dados, existente)));
+    }
+
+    /**
+     * Direção a gravar: a que veio, quando os créditos foram pedidos; a que já está
+     * gravada, quando não foram.
+     *
+     * <p>A importação básica não pede créditos, e não pedir não é o mesmo que receber
+     * uma lista vazia — sem essa distinção, importar o básico de um filme já completo
+     * apagaria a direção e o elenco dele.
+     */
+    private List<Pessoa> diretoresPara(FilmeDoCatalogo dados, Optional<Filme> existente) {
+        return dados.creditosPedidos()
+                .map(this::resolverDiretores)
+                .orElseGet(() -> existente.map(Filme::diretores).orElseGet(List::of));
+    }
+
+    private List<Participacao> elencoPara(FilmeDoCatalogo dados, Optional<Filme> existente) {
+        return dados.creditosPedidos()
+                .map(this::resolverElenco)
+                .orElseGet(() -> existente.map(Filme::elenco).orElseGet(List::of));
     }
 
     private List<Genero> resolverGeneros(FilmeDoCatalogo dados) {
@@ -112,15 +141,15 @@ public class ServicoDeFilmes {
                 .toList();
     }
 
-    private List<Pessoa> resolverDiretores(FilmeDoCatalogo dados) {
-        return dados.diretores().stream()
+    private List<Pessoa> resolverDiretores(CreditosDoCatalogo creditos) {
+        return creditos.diretores().stream()
                 .map(referencia -> pessoas.buscarOuCriar(referencia.idExterno(), referencia.nome()))
                 .toList();
     }
 
     /** Guarda só os primeiros nomes do crédito: o catálogo não precisa do elenco inteiro. */
-    private List<Participacao> resolverElenco(FilmeDoCatalogo dados) {
-        return dados.elenco().stream()
+    private List<Participacao> resolverElenco(CreditosDoCatalogo creditos) {
+        return creditos.elenco().stream()
                 .sorted(Comparator.comparing(participacao -> participacao.ordem()))
                 .limit(Filme.LIMITE_DE_ELENCO)
                 .map(participacao -> new Participacao(

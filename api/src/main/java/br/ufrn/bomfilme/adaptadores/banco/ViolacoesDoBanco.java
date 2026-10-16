@@ -2,6 +2,7 @@ package br.ufrn.bomfilme.adaptadores.banco;
 
 import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import jakarta.persistence.PersistenceException;
+import org.jboss.logging.Logger;
 import java.util.function.Supplier;
 import org.hibernate.exception.ConstraintViolationException;
 
@@ -15,6 +16,8 @@ import org.hibernate.exception.ConstraintViolationException;
  * obrigaria o adaptador HTTP a importar JPA e Hibernate.
  */
 final class ViolacoesDoBanco {
+
+    private static final Logger LOG = Logger.getLogger(ViolacoesDoBanco.class);
 
     /** Código SQLSTATE do PostgreSQL para unique_violation. */
     static final String UNICIDADE = "23505";
@@ -45,20 +48,28 @@ final class ViolacoesDoBanco {
     }
 
     /**
-     * Devolve o erro de domínio correspondente, ou repropaga quando não é violação de
-     * restrição — um erro de persistência que não sabemos classificar não deve virar 409.
+     * Devolve o erro de domínio correspondente à violação.
+     *
+     * <p>Uma falha de persistência que não sabemos classificar não vira 409: vira
+     * {@link ErroDeDominio.FalhaInesperada}, que o adaptador HTTP responde como 500 em
+     * <em>problem details</em>. Repropagar a exceção crua faria a resposta cair no
+     * tratamento genérico do servidor e sair fora do formato padrão de erro — por isso
+     * a causa fica no log, e não na resposta.
      */
     private static RuntimeException traduzir(PersistenceException excecao) {
         ConstraintViolationException violacao = procurarViolacao(excecao);
-        if (violacao == null) {
-            return excecao;
-        }
-        return switch (violacao.getSQLState()) {
+        String sqlState = violacao == null ? null : violacao.getSQLState();
+        return switch (sqlState) {
             case UNICIDADE -> new ErroDeDominio.Conflito("já existe um registro com esses dados");
             case CHAVE_ESTRANGEIRA -> new ErroDeDominio.Conflito("operação conflita com registros vinculados");
             case EXCLUSAO -> new ErroDeDominio.Conflito("a sala já possui uma sessão nesse horário");
-            case null, default -> excecao;
+            case null, default -> naoClassificada(excecao);
         };
+    }
+
+    private static ErroDeDominio.FalhaInesperada naoClassificada(PersistenceException excecao) {
+        LOG.error("Erro de persistência não tratado", excecao);
+        return new ErroDeDominio.FalhaInesperada("erro interno ao acessar o banco de dados", excecao);
     }
 
     private static ConstraintViolationException procurarViolacao(Throwable erro) {

@@ -44,4 +44,19 @@ public abstract sealed class ErroDeDominio extends RuntimeException {
             super(mensagem);
         }
     }
+
+    /**
+     * Falha que não sabemos classificar — vira 500.
+     *
+     * <p>Existe para que uma falha inesperada de infraestrutura chegue ao cliente no
+     * formato padrão de erro, em vez de cair no tratamento genérico do servidor. Quem
+     * a lança é responsável por registrar a causa no log: a mensagem que vai para o
+     * cliente não deve expor detalhe interno.
+     */
+    public static final class FalhaInesperada extends ErroDeDominio {
+        public FalhaInesperada(String mensagem, Throwable causa) {
+            super(mensagem);
+            initCause(causa);
+        }
+    }
 }
