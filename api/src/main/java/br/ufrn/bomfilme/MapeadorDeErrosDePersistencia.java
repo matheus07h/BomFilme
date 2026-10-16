@@ -28,6 +28,9 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
     /** Código SQLSTATE do PostgreSQL para foreign_key_violation. */
     static final String VIOLACAO_DE_CHAVE_ESTRANGEIRA = "23503";
 
+    /** Código SQLSTATE do PostgreSQL para exclusion_violation (sessões sobrepostas na mesma sala). */
+    static final String VIOLACAO_DE_EXCLUSAO = "23P01";
+
     @Override
     public Response toResponse(PersistenceException excecao) {
         ConstraintViolationException violacao = procurarViolacao(excecao);
@@ -37,6 +40,9 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
         }
         if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
             return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
+        }
+        if (violacao != null && VIOLACAO_DE_EXCLUSAO.equals(violacao.getSQLState())) {
+            return resposta(Response.Status.CONFLICT, "a sala já possui uma sessão nesse horário");
         }
 
         LOG.error("Erro de persistência não tratado", excecao);
