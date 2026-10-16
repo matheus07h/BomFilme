@@ -5,11 +5,11 @@ import static org.hamcrest.Matchers.contains;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-import io.quarkus.narayana.jta.QuarkusTransaction;
+import br.ufrn.bomfilme.dominio.RepositorioDeAssentos;
+import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.util.HashMap;
@@ -25,7 +25,13 @@ class RecursoDeSalasTest {
     private static final AtomicLong PROXIMO_TMDB_ID = new AtomicLong(2_000_000);
 
     @Inject
-    EntityManager em;
+    Fixtures dados;
+
+    @Inject
+    RepositorioDeSessoes sessoes;
+
+    @Inject
+    RepositorioDeAssentos assentos;
 
     private static String nomeUnico(String prefixo) {
         return prefixo + " " + UUID.randomUUID().toString().substring(0, 8);
@@ -72,26 +78,12 @@ class RecursoDeSalasTest {
     }
 
     private long criarSessao(long salaId) {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            Filme filme = new Filme();
-            filme.tmdbId = PROXIMO_TMDB_ID.incrementAndGet();
-            filme.titulo = nomeUnico("Filme");
-            filme.tituloOriginal = filme.titulo;
-            filme.sinopse = "Sinopse de teste";
-            filme.dataLancamento = LocalDate.of(2020, 1, 1);
-            filme.notaMediaTmdb = 7.0;
-            filme.duracaoMinutos = 100;
-            em.persist(filme);
-            OffsetDateTime inicio = OffsetDateTime.now().plusDays(1);
-            Sessao sessao = new Sessao(em.getReference(Sala.class, salaId), filme.id, inicio, inicio.plusMinutes(100));
-            em.persist(sessao);
-            return sessao.id;
-        });
+        OffsetDateTime inicio = OffsetDateTime.now().plusDays(1);
+        return sessoes.criar(salaId, dados.filme(100).id(), inicio, inicio.plusMinutes(100)).id();
     }
 
     private void ocupar(long sessaoId, long assentoId) {
-        QuarkusTransaction.requiringNew().run(() -> em.persist(new Ocupacao(
-                em.getReference(Sessao.class, sessaoId), em.getReference(Assento.class, assentoId))));
+        assentos.ocupar(sessaoId, assentoId);
     }
 
     @Test

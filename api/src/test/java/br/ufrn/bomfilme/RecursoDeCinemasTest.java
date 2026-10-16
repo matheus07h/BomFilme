@@ -7,11 +7,11 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-import io.quarkus.narayana.jta.QuarkusTransaction;
+import br.ufrn.bomfilme.dominio.RepositorioDeSalas;
+import br.ufrn.bomfilme.dominio.Paginacao;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,7 +29,7 @@ import org.junit.jupiter.params.provider.ValueSource;
 class RecursoDeCinemasTest {
 
     @Inject
-    EntityManager entityManager;
+    RepositorioDeSalas salas;
 
     private static String nomeUnico(String prefixo) {
         return prefixo + " " + UUID.randomUUID().toString().substring(0, 8);
@@ -67,17 +67,11 @@ class RecursoDeCinemasTest {
     }
 
     private long criarSala(long cinemaId) {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            Sala sala = new Sala(entityManager.getReference(Cinema.class, cinemaId), "Sala 1");
-            entityManager.persist(sala);
-            entityManager.flush();
-            return sala.id;
-        });
+        return salas.criar(cinemaId, "Sala 1").id();
     }
 
     private void removerSala(long salaId) {
-        QuarkusTransaction.requiringNew().run(() ->
-                entityManager.remove(entityManager.getReference(Sala.class, salaId)));
+        salas.remover(salaId);
     }
 
     @Test
