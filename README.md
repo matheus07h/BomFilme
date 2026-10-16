@@ -9,7 +9,8 @@ O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de fi
 ## Documentação
 
 - [Proposta do produto](docs/proposta.md): visão, MVP, entidades e decisões de arquitetura.
-- [Arquitetura](docs/arquitetura.md): serviços, responsabilidades, fluxo e infraestrutura local.
+- [Arquitetura do sistema](docs/arquitetura.md): serviços, responsabilidades, fluxo e infraestrutura local.
+- [Arquitetura da API](api/ARCHITECTURE.md): as camadas em detalhe, as convenções de cada uma e o roteiro para adicionar um caso de uso.
 - [Backlog inicial](docs/backlog.md): histórias e tarefas organizadas por prioridade e sprint.
 - [GitHub Project](https://github.com/users/matheus07h/projects/3): quadro com prioridades, estimativas, sprints e responsáveis.
 

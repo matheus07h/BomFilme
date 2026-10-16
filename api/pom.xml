@@ -5,6 +5,25 @@
   <groupId>br.ufrn.bomfilme</groupId>
   <artifactId>bomfilme-api</artifactId>
   <version>0.1.0</version>
+  <packaging>pom</packaging>
+
+  <!--
+    Uma camada por módulo. A direção da dependência é garantida pelo build, não por
+    convenção: `dominio` não declara nenhuma dependência, então não existe import de
+    framework que compile ali. `aplicacao` só alcança `dominio`, e os adaptadores são
+    o único módulo que conhece Quarkus, JPA e HTTP.
+
+        adaptadores  ──►  aplicacao  ──►  dominio
+
+    O teste de arquitetura em `adaptadores` continua valendo: ele cobre o que o Maven
+    não cobre, que é a regra entre pacotes dentro do módulo de adaptadores (http não
+    fala com banco, por exemplo).
+  -->
+  <modules>
+    <module>dominio</module>
+    <module>aplicacao</module>
+    <module>adaptadores</module>
+  </modules>
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
@@ -17,6 +36,7 @@
     <quarkus.platform.artifact-id>quarkus-bom</quarkus.platform.artifact-id>
     <quarkus.platform.version>3.28.2</quarkus.platform.version>
     <surefire-plugin.version>3.5.2</surefire-plugin.version>
+    <archunit.version>1.5.0</archunit.version>
   </properties>
 
   <dependencyManagement>
@@ -28,107 +48,33 @@
         <type>pom</type>
         <scope>import</scope>
       </dependency>
+      <dependency>
+        <groupId>br.ufrn.bomfilme</groupId>
+        <artifactId>dominio</artifactId>
+        <version>${project.version}</version>
+      </dependency>
+      <dependency>
+        <groupId>br.ufrn.bomfilme</groupId>
+        <artifactId>aplicacao</artifactId>
+        <version>${project.version}</version>
+      </dependency>
     </dependencies>
   </dependencyManagement>
 
-  <dependencies>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-jackson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-validator</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-hibernate-orm-panache</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-jdbc-postgresql</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-flyway</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>org.flywaydb</groupId>
-      <artifactId>flyway-database-postgresql</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-smallrye-openapi</artifactId>
-    </dependency>
-
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-rest-client-jackson</artifactId>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.quarkus</groupId>
-      <artifactId>quarkus-junit5-mockito</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>io.rest-assured</groupId>
-      <artifactId>rest-assured</artifactId>
-      <scope>test</scope>
-    </dependency>
-    <!-- Teste de arquitetura: a regra de dependência verificada no bytecode -->
-    <dependency>
-      <groupId>com.tngtech.archunit</groupId>
-      <artifactId>archunit</artifactId>
-      <version>1.5.0</version>
-      <scope>test</scope>
-    </dependency>
-
-  </dependencies>
-
   <build>
-    <plugins>
-      <plugin>
-        <groupId>${quarkus.platform.group-id}</groupId>
-        <artifactId>quarkus-maven-plugin</artifactId>
-        <version>${quarkus.platform.version}</version>
-        <extensions>true</extensions>
-        <configuration>
-          <jvmArgs>--add-opens java.base/java.lang=ALL-UNNAMED -Dapi.version=1.41</jvmArgs>
-        </configuration>
-        <executions>
-          <execution>
-            <goals>
-              <goal>build</goal>
-              <goal>generate-code</goal>
-              <goal>generate-code-tests</goal>
-            </goals>
-          </execution>
-        </executions>
-      </plugin>
-      <plugin>
-        <artifactId>maven-surefire-plugin</artifactId>
-        <version>${surefire-plugin.version}</version>
-        <configuration>
-          <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
-          <systemPropertyVariables>
-            <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
-            <api.version>1.41</api.version>
-          </systemPropertyVariables>
-        </configuration>
-      </plugin>
-    </plugins>
+    <pluginManagement>
+      <plugins>
+        <plugin>
+          <artifactId>maven-surefire-plugin</artifactId>
+          <version>${surefire-plugin.version}</version>
+          <configuration>
+            <argLine>--add-opens java.base/java.lang=ALL-UNNAMED</argLine>
+            <systemPropertyVariables>
+              <java.util.logging.manager>org.jboss.logmanager.LogManager</java.util.logging.manager>
+            </systemPropertyVariables>
+          </configuration>
+        </plugin>
+      </plugins>
+    </pluginManagement>
   </build>
 </project>

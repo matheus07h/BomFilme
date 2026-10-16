@@ -19,7 +19,7 @@ services:
   api:
     build:
       context: ./api
-      dockerfile: src/main/docker/Dockerfile.jvm
+      dockerfile: adaptadores/src/main/docker/Dockerfile.jvm
     environment:
       BOMFILME_DB_URL: jdbc:postgresql://postgres:5432/${BOMFILME_DB_NAME:-bomfilme}
       BOMFILME_DB_USER: ${BOMFILME_DB_USER:-bomfilme}

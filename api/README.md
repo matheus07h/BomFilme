@@ -8,6 +8,10 @@
 | Migrações | Flyway        |
 | Testes    | JUnit 5       |
 
+Um módulo Maven por camada: `dominio`, `aplicacao` e `adaptadores`. As convenções de
+cada uma e o roteiro para adicionar um caso de uso estão em
+[ARCHITECTURE.md](ARCHITECTURE.md).
+
 ## Pré-requisitos
 
 - JDK 25
@@ -15,13 +19,32 @@
 
 ## Comandos
 
-```bash
-cd BomFilme/api
+Da raiz do monorepo:
 
-./mvnw package -DskipTests   # compila
-./mvnw verify                # sobe o PostgreSQL, aplica as migrações e roda os testes
-./mvnw quarkus:dev           # modo de desenvolvimento em http://localhost:8080
+```bash
+mise run build   # compila os três módulos
+mise run test    # sobe o PostgreSQL, aplica as migrações e roda os testes
+mise run dev     # modo de desenvolvimento em http://localhost:8080, com Live Coding
 ```
+
+Direto pelo Maven, de `BomFilme/api`:
+
+```bash
+./mvnw package -DskipTests   # compila os três módulos
+./mvnw verify                # sobe o PostgreSQL, aplica as migrações e roda os testes
+```
+
+O modo de desenvolvimento precisa de dois passos. `api/` é um agregador e o plugin do
+Quarkus vive no módulo `adaptadores`, então `./mvnw quarkus:dev` aqui falha com
+"No plugin found for prefix 'quarkus'":
+
+```bash
+# publica dominio e aplicacao no repositório local
+./mvnw install -DskipTests -Dquarkus.build.skip=true
+cd adaptadores && ../mvnw quarkus:dev
+```
+
+`mise run dev` encapsula esses dois passos.
 
 ## Endpoints
 
@@ -76,7 +99,7 @@ Salas, assentos e sessões seguem as mesmas regras, com estes casos próprios:
 | `409`  | Nome de sala repetido no cinema; fileira e número repetidos na sala; sessão que se sobrepõe a outra da mesma sala; remoção de sala com assentos ou sessões, de assento já ocupado e de sessão com assentos ocupados |
 | `422`  | Sessão de um filme sem duração cadastrada, pois o fim da sessão não pode ser calculado |
 
-A unicidade é garantida pelas restrições da migração `V1`, e o `MapeadorDeErrosDePersistencia` converte a violação (SQLSTATE `23505`) em `409`. Assim, duas requisições simultâneas com o mesmo nome também resultam em uma criação e um conflito. A UF é gravada em maiúsculas e os espaços nas bordas dos textos são removidos.
+A unicidade é garantida pelas restrições da migração `V1`, e `ViolacoesDoBanco`, no adaptador de banco, converte a violação (SQLSTATE `23505`) em conflito de domínio, que o adaptador HTTP responde como `409`. Assim, duas requisições simultâneas com o mesmo nome também resultam em uma criação e um conflito. A UF é gravada em maiúsculas e os espaços nas bordas dos textos são removidos.
 
 A especificação OpenAPI fica em `/q/openapi` e o Swagger UI em `/q/swagger-ui`.
 
@@ -94,7 +117,21 @@ A API confere o conflito antes de gravar e responde `409` com uma mensagem espec
 
 ### Listagens
 
-Todas as listagens paginam no banco (`LIMIT`/`OFFSET`) com ordenação estável: redes, cinemas e salas por `id`; assentos por fileira e número; sessões por início e `id`. Uma página sem resultados retorna `[]`.
+Todas as listagens paginam no banco (`LIMIT`/`OFFSET`) com ordenação estável: redes, cinemas e salas por `id`; assentos por fileira e número; sessões por início e `id`.
+
+Toda listagem devolve o mesmo envelope, com o total para o cliente saber quantas páginas existem:
+
+```json
+{
+  "itens": [],
+  "pagina": 0,
+  "tamanho": 20,
+  "total": 0,
+  "totalPaginas": 0
+}
+```
+
+Uma página além do fim devolve `itens` vazio sem perder o `total`. O `total` vem de um `count` separado, não do tamanho da lista carregada.
 
 Parâmetros comuns:
 
