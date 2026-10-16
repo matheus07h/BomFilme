@@ -260,7 +260,7 @@ public class RecursoDeFilmesTest {
             em.persist(cinema);
             Sala sala = new Sala(cinema, "Sala");
             em.persist(sala);
-            Sessao sessao = new Sessao(sala, (long) id, OffsetDateTime.now().plusDays(1));
+            Sessao sessao = new Sessao(sala, (long) id, OffsetDateTime.now().plusDays(1), OffsetDateTime.now().plusDays(1).plusHours(2));
             em.persist(sessao);
             return sessao.id;
         });

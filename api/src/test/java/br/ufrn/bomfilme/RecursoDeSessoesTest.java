@@ -59,7 +59,7 @@ class RecursoDeSessoesTest {
             filme.dataLancamento = LocalDate.of(2020, 1, 1);
             filme.notaMediaTmdb = 7.0;
             em.persist(filme);
-            Sessao sessao = new Sessao(sala, filme.id, OffsetDateTime.now().plusDays(1));
+            Sessao sessao = new Sessao(sala, filme.id, OffsetDateTime.now().plusDays(1), OffsetDateTime.now().plusDays(1).plusHours(2));
             em.persist(sessao);
             return sessao;
         });
