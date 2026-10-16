@@ -222,7 +222,7 @@ public class RecursoDeFilmesTest {
     void recusaTamanhoDePaginaAcimaDoMaximo() {
         given()
                 // Certifique-se de que RecursoDeFilme ou RecursoDeFilmes possui essa constante visível
-                .queryParam("tamanho", RecursoDeFilme.TAMANHO_MAXIMO + 1)
+                .queryParam("tamanho", Paginacao.TAMANHO_MAXIMO + 1)
                 .when().get("/filmes")
                 .then()
                 .statusCode(400);

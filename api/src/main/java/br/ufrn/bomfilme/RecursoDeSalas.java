@@ -24,11 +24,18 @@ import java.net.URI;
 import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 /** Salas de um cinema e, aninhados em cada sala, os seus assentos. */
 @Path("/salas")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({MediaType.APPLICATION_JSON, Problema.MEDIA_TYPE})
 @Consumes(MediaType.APPLICATION_JSON)
+@Tag(name = "Salas")
 public class RecursoDeSalas {
 
     @Inject
@@ -41,13 +48,22 @@ public class RecursoDeSalas {
     RepositorioDeAssentos assentos;
 
     @GET
+    @Operation(summary = "Lista as salas", description = "Listagem paginada, com filtro por cinema e por nome.")
+    @APIResponse(responseCode = "200", description = "Página de salas, vazia quando não há resultados",
+            content = @Content(schema = @Schema(implementation = Sala[].class)))
+    @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public List<Sala> listar(
+            @Parameter(description = "Filtra pelas salas de um cinema")
             @QueryParam("cinemaId")
             @Positive(message = "cinemaId deve ser positivo") Long cinemaId,
+            @Parameter(description = "Filtra pelo nome da sala, sem diferenciar maiúsculas")
             @QueryParam("nome")
             @Size(max = 60, message = "nome deve ter no máximo 60 caracteres") String nome,
+            @Parameter(description = "Índice da página, começando em zero")
             @QueryParam("pagina") @DefaultValue("0")
             @Min(value = 0, message = "pagina deve ser maior ou igual a zero") int pagina,
+            @Parameter(description = "Quantidade de salas por página, entre 1 e 100")
             @QueryParam("tamanho") @DefaultValue("20")
             @Min(value = 1, message = "tamanho deve ser maior ou igual a um")
             @Max(value = Paginacao.TAMANHO_MAXIMO, message = "tamanho deve ser menor ou igual a 100") int tamanho) {
@@ -56,13 +72,27 @@ public class RecursoDeSalas {
 
     @GET
     @Path("/{id}")
-    public Response porId(@PathParam("id") long id) {
+    @Operation(summary = "Busca uma sala por id")
+    @APIResponse(responseCode = "200", description = "A sala encontrada",
+            content = @Content(schema = @Schema(implementation = Sala.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sala com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response porId(@Parameter(description = "Id da sala") @PathParam("id") long id) {
         return salas.porId(id)
                 .map(sala -> Response.ok(sala).build())
                 .orElseGet(() -> salaNaoEncontrada(id));
     }
 
     @POST
+    @Operation(summary = "Cria uma sala em um cinema")
+    @APIResponse(responseCode = "201", description = "Sala criada; o endereço vem no cabeçalho Location",
+            content = @Content(schema = @Schema(implementation = Sala.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe cinema com o id informado",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "O cinema já possui uma sala com esse nome",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response criar(@Valid @NotNull(message = "o corpo da requisição é obrigatório") NovaSala nova) {
         Cinema cinema = cinemas.porId(nova.cinemaId()).orElse(null);
         if (cinema == null) {
@@ -74,8 +104,17 @@ public class RecursoDeSalas {
 
     @PUT
     @Path("/{id}")
+    @Operation(summary = "Atualiza uma sala")
+    @APIResponse(responseCode = "200", description = "Sala atualizada",
+            content = @Content(schema = @Schema(implementation = Sala.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sala, ou cinema, com o id informado",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "O cinema já possui outra sala com esse nome",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response atualizar(
-            @PathParam("id") long id,
+            @Parameter(description = "Id da sala") @PathParam("id") long id,
             @Valid @NotNull(message = "o corpo da requisição é obrigatório") NovaSala dados) {
         if (salas.porId(id).isEmpty()) {
             return salaNaoEncontrada(id);
@@ -91,7 +130,14 @@ public class RecursoDeSalas {
 
     @DELETE
     @Path("/{id}")
-    public Response remover(@PathParam("id") long id) {
+    @Operation(summary = "Remove uma sala",
+            description = "A remoção é recusada enquanto houver sessões ou assentos vinculados à sala.")
+    @APIResponse(responseCode = "204", description = "Sala removida")
+    @APIResponse(responseCode = "404", description = "Não existe sala com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sala ainda possui sessões ou assentos vinculados",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response remover(@Parameter(description = "Id da sala") @PathParam("id") long id) {
         if (salas.porId(id).isEmpty()) {
             return salaNaoEncontrada(id);
         }
@@ -109,12 +155,23 @@ public class RecursoDeSalas {
 
     @GET
     @Path("/{salaId}/assentos")
+    @Operation(summary = "Lista os assentos de uma sala",
+            description = "Ordenados por fileira e número. A fileira do filtro não diferencia maiúsculas.")
+    @APIResponse(responseCode = "200", description = "Página de assentos, vazia quando não há resultados",
+            content = @Content(schema = @Schema(implementation = Assento[].class)))
+    @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sala com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response listarAssentos(
-            @PathParam("salaId") long salaId,
+            @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
+            @Parameter(description = "Filtra por fileira, com uma ou duas letras")
             @QueryParam("fileira")
             @Pattern(regexp = "[A-Za-z]{1,2}", message = "fileira deve ter uma ou duas letras") String fileira,
+            @Parameter(description = "Índice da página, começando em zero")
             @QueryParam("pagina") @DefaultValue("0")
             @Min(value = 0, message = "pagina deve ser maior ou igual a zero") int pagina,
+            @Parameter(description = "Quantidade de assentos por página, entre 1 e 100")
             @QueryParam("tamanho") @DefaultValue("20")
             @Min(value = 1, message = "tamanho deve ser maior ou igual a um")
             @Max(value = Paginacao.TAMANHO_MAXIMO, message = "tamanho deve ser menor ou igual a 100") int tamanho) {
@@ -127,7 +184,14 @@ public class RecursoDeSalas {
 
     @GET
     @Path("/{salaId}/assentos/{id}")
-    public Response assentoPorId(@PathParam("salaId") long salaId, @PathParam("id") long id) {
+    @Operation(summary = "Busca um assento de uma sala")
+    @APIResponse(responseCode = "200", description = "O assento encontrado",
+            content = @Content(schema = @Schema(implementation = Assento.class)))
+    @APIResponse(responseCode = "404", description = "O assento não existe ou não pertence a essa sala",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response assentoPorId(
+            @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
+            @Parameter(description = "Id do assento") @PathParam("id") long id) {
         return assentoDaSala(salaId, id)
                 .map(assento -> Response.ok(assento).build())
                 .orElseGet(() -> assentoNaoEncontrado(salaId, id));
@@ -135,8 +199,17 @@ public class RecursoDeSalas {
 
     @POST
     @Path("/{salaId}/assentos")
+    @Operation(summary = "Cria um assento em uma sala", description = "A fileira é gravada em maiúsculas.")
+    @APIResponse(responseCode = "201", description = "Assento criado; o endereço vem no cabeçalho Location",
+            content = @Content(schema = @Schema(implementation = Assento.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sala com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sala já possui um assento nessa fileira e número",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response criarAssento(
-            @PathParam("salaId") long salaId,
+            @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
             @Valid @NotNull(message = "o corpo da requisição é obrigatório") NovoAssento novo) {
         Sala sala = salas.porId(salaId).orElse(null);
         if (sala == null) {
@@ -150,9 +223,18 @@ public class RecursoDeSalas {
 
     @PUT
     @Path("/{salaId}/assentos/{id}")
+    @Operation(summary = "Atualiza um assento", description = "O assento continua na mesma sala.")
+    @APIResponse(responseCode = "200", description = "Assento atualizado",
+            content = @Content(schema = @Schema(implementation = Assento.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "O assento não existe ou não pertence a essa sala",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sala já possui outro assento nessa fileira e número",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response atualizarAssento(
-            @PathParam("salaId") long salaId,
-            @PathParam("id") long id,
+            @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
+            @Parameter(description = "Id do assento") @PathParam("id") long id,
             @Valid @NotNull(message = "o corpo da requisição é obrigatório") NovoAssento dados) {
         if (assentoDaSala(salaId, id).isEmpty()) {
             return assentoNaoEncontrado(salaId, id);
@@ -164,7 +246,16 @@ public class RecursoDeSalas {
 
     @DELETE
     @Path("/{salaId}/assentos/{id}")
-    public Response removerAssento(@PathParam("salaId") long salaId, @PathParam("id") long id) {
+    @Operation(summary = "Remove um assento",
+            description = "A remoção é recusada enquanto o assento estiver ocupado em alguma sessão.")
+    @APIResponse(responseCode = "204", description = "Assento removido")
+    @APIResponse(responseCode = "404", description = "O assento não existe ou não pertence a essa sala",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "O assento está ocupado em alguma sessão",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response removerAssento(
+            @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
+            @Parameter(description = "Id do assento") @PathParam("id") long id) {
         if (assentoDaSala(salaId, id).isEmpty()) {
             return assentoNaoEncontrado(salaId, id);
         }
