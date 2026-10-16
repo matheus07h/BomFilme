@@ -12,7 +12,8 @@ import org.jboss.logging.Logger;
  * Traduz violações de unicidade e de chave estrangeira do banco em 409 Conflict.
  *
  * A regra de unicidade fica no próprio banco (restrições da migração V1), o que
- * também cobre duas requisições simultâneas tentando criar o mesmo registro.
+ * também cobre duas requisições simultâneas tentando criar o mesmo registro. As
+ * chaves estrangeiras, por sua vez, impedem remover um registro que ainda tem vínculos.
  * Qualquer outro erro de persistência continua sendo 500, mas com log e sem
  * expor detalhes internos ao cliente.
  */
@@ -34,7 +35,6 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
         if (violacao != null && VIOLACAO_DE_UNICIDADE.equals(violacao.getSQLState())) {
             return resposta(Response.Status.CONFLICT, "já existe um registro com esses dados");
         }
-
         if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
             return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
         }
