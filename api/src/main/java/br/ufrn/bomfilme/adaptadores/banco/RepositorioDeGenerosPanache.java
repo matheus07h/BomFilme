@@ -24,10 +24,10 @@ class RepositorioDeGenerosPanache implements RepositorioDeGeneros, PanacheReposi
 
     GeneroEntidade entidadePorTmdbId(long tmdbId, String nome) {
         return find("tmdbId", tmdbId).<GeneroEntidade>firstResultOptional()
-                .orElseGet(() -> {
+                .orElseGet(() -> ViolacoesDoBanco.gravando(() -> {
                     GeneroEntidade entidade = new GeneroEntidade(tmdbId, nome);
                     persist(entidade);
                     return entidade;
-                });
+                }));
     }
 }

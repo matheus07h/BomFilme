@@ -45,7 +45,7 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
     public Assento criar(long salaId, String fileira, int numero) {
         AssentoEntidade entidade = new AssentoEntidade(
                 getEntityManager().getReference(SalaEntidade.class, salaId), fileira, numero);
-        persistAndFlush(entidade);
+        ViolacoesDoBanco.gravando(() -> persistAndFlush(entidade));
         return entidade.paraDominio();
     }
 
@@ -57,7 +57,7 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
             entidade.fileira = fileira;
             entidade.numero = numero;
         });
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrado.map(AssentoEntidade::paraDominio);
     }
 
@@ -65,7 +65,7 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
     @Transactional
     public boolean remover(long id) {
         boolean removido = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removido;
     }
 
@@ -88,14 +88,20 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
 
     /**
      * A unicidade de (sessão, assento) fica no banco, o que recusa a segunda de duas
-     * ocupações simultâneas do mesmo assento. O flush faz a violação aparecer aqui.
+     * ocupações simultâneas do mesmo assento.
+     *
+     * <p>O {@code persist} entra no envelope junto com o {@code flush}: a chave é gerada
+     * com {@code insert ... returning}, então o insert dispara já no persist e é ali que
+     * a violação aparece.
      */
     @Override
     @Transactional
     public void ocupar(long sessaoId, long assentoId) {
-        getEntityManager().persist(new OcupacaoEntidade(
-                getEntityManager().getReference(SessaoEntidade.class, sessaoId),
-                getEntityManager().getReference(AssentoEntidade.class, assentoId)));
-        getEntityManager().flush();
+        ViolacoesDoBanco.gravando(() -> {
+            getEntityManager().persist(new OcupacaoEntidade(
+                    getEntityManager().getReference(SessaoEntidade.class, sessaoId),
+                    getEntityManager().getReference(AssentoEntidade.class, assentoId)));
+            getEntityManager().flush();
+        });
     }
 }

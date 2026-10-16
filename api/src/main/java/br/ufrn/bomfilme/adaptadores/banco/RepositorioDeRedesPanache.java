@@ -34,7 +34,7 @@ class RepositorioDeRedesPanache implements RepositorioDeRedes, PanacheRepository
     @Transactional
     public RedeCinema criar(String nome) {
         RedeCinemaEntidade entidade = new RedeCinemaEntidade(nome);
-        persistAndFlush(entidade);
+        ViolacoesDoBanco.gravando(() -> persistAndFlush(entidade));
         return entidade.paraDominio();
     }
 
@@ -43,7 +43,7 @@ class RepositorioDeRedesPanache implements RepositorioDeRedes, PanacheRepository
     public Optional<RedeCinema> atualizar(long id, String nome) {
         Optional<RedeCinemaEntidade> encontrada = findByIdOptional(id);
         encontrada.ifPresent(entidade -> entidade.nome = nome);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrada.map(RedeCinemaEntidade::paraDominio);
     }
 
@@ -51,7 +51,7 @@ class RepositorioDeRedesPanache implements RepositorioDeRedes, PanacheRepository
     @Transactional
     public boolean remover(long id) {
         boolean removida = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removida;
     }
 }

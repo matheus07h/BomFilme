@@ -22,6 +22,39 @@ A API Java é o serviço principal e a única responsável por persistir dados d
 | Serviço Go | Cenários reproduzíveis de aprovação, recusa, demora e falha de pagamento simulado |
 | Contratos em `protos/` | Mensagens e operações gRPC versionadas entre Java e Go, a partir da Sprint 2 |
 
+## Camadas da API Java
+
+A API é organizada em camadas, com a seta de dependência apontando só para dentro:
+
+```mermaid
+flowchart LR
+    subgraph adaptadores
+        HTTP[adaptadores/http]
+        Banco[adaptadores/banco]
+        TMDB[adaptadores/tmdb]
+    end
+    HTTP --> Aplicacao[aplicacao]
+    Aplicacao --> Dominio[dominio]
+    Banco --> Dominio
+    TMDB --> Dominio
+```
+
+| Pacote | O que mora nele | O que ele conhece |
+| --- | --- | --- |
+| `dominio` | Registros (`Cinema`, `Sala`, `Sessao`, `Filme`, ...), portas de repositório, porta do catálogo externo e `ErroDeDominio` | Nada além do Java padrão |
+| `aplicacao` | Casos de uso (`ServicoDeSessoes`, `ServicoDeFilmes`, ...) | Só as portas do domínio |
+| `adaptadores/http` | Recursos REST, mapeadores de exceção, DTOs de entrada e saída | Domínio e casos de uso |
+| `adaptadores/banco` | Entidades JPA (`*Entidade`) e implementações Panache das portas | Domínio |
+| `adaptadores/tmdb` | Cliente REST do TMDB e o formato de resposta dele | Domínio |
+
+Três consequências práticas dessa separação:
+
+- **O domínio é Java puro.** Nenhum arquivo de `dominio` importa Jakarta, Hibernate, Quarkus, Jackson ou JDBC. As entidades JPA são classes separadas, no adaptador de banco, e nem são visíveis de fora dele.
+- **Os casos de uso recusam operações sem conhecer HTTP.** Eles lançam `ErroDeDominio.NaoEncontrado`, `Conflito`, `RegraViolada` ou `ServicoExternoIndisponivel`. Um único mapeador, em `adaptadores/http`, traduz isso para status e *problem details*.
+- **Reconhecer um SQLSTATE é conhecimento de persistência.** A tradução de violação de unicidade, chave estrangeira e sobreposição de horários acontece em `adaptadores/banco`, não num `ExceptionMapper` — o que impediria o adaptador HTTP de importar JPA.
+
+A regra de dependência é verificada por teste: `ArquiteturaTest` lê o bytecode com ArchUnit e falha se o domínio importar framework ou se um adaptador falar com outro. Um dos casos é um controle que confirma que a regra ainda acusa quando deve.
+
 ## Fluxo de compra previsto
 
 1. A API cria a compra pendente e reserva o assento com uma operação segura no banco.

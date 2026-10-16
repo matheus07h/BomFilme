@@ -10,7 +10,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
-import br.ufrn.bomfilme.adaptadores.http.MapeadorDeErrosDePersistencia;
+import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
@@ -158,12 +158,12 @@ class ProgramacaoDeSessoesTest {
         long filmeId = criarFilme(120);
         criarSessao((int) salaId, filmeId, AMANHA_AS_14H);
 
-        RuntimeException erro = assertThrows(RuntimeException.class, () ->
+        // Vai direto pela porta, sem passar pelo caso de uso: é a restrição de exclusão
+        // da migração V6 que recusa, e não a verificação da aplicação.
+        ErroDeDominio.Conflito conflito = assertThrows(ErroDeDominio.Conflito.class, () ->
                 sessoes.criar(salaId, filmeId,
                         AMANHA_AS_14H.plusMinutes(30), AMANHA_AS_14H.plusMinutes(150)));
-        ConstraintViolationException violacao = procurarViolacao(erro);
-        assertNotNull(violacao);
-        assertEquals(MapeadorDeErrosDePersistencia.VIOLACAO_DE_EXCLUSAO, violacao.getSQLState());
+        assertEquals("a sala já possui uma sessão nesse horário", conflito.getMessage());
     }
 
     @Test

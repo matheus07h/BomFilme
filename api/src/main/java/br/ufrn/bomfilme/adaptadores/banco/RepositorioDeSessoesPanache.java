@@ -55,7 +55,7 @@ class RepositorioDeSessoesPanache implements RepositorioDeSessoes, PanacheReposi
     @Transactional
     public Sessao criar(long salaId, long filmeId, OffsetDateTime inicio, OffsetDateTime fim) {
         SessaoEntidade entidade = new SessaoEntidade(referenciaDaSala(salaId), filmeId, inicio, fim);
-        persistAndFlush(entidade);
+        ViolacoesDoBanco.gravando(() -> persistAndFlush(entidade));
         return entidade.paraDominio();
     }
 
@@ -70,7 +70,7 @@ class RepositorioDeSessoesPanache implements RepositorioDeSessoes, PanacheReposi
             entidade.inicio = inicio;
             entidade.fim = fim;
         });
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrada.map(SessaoEntidade::paraDominio);
     }
 
@@ -78,7 +78,7 @@ class RepositorioDeSessoesPanache implements RepositorioDeSessoes, PanacheReposi
     @Transactional
     public boolean remover(long id) {
         boolean removida = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removida;
     }
 

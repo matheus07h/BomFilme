@@ -17,10 +17,10 @@ class RepositorioDePessoasPanache implements RepositorioDePessoas, PanacheReposi
 
     PessoaEntidade entidadePorTmdbId(long tmdbId, String nome) {
         return find("tmdbId", tmdbId).<PessoaEntidade>firstResultOptional()
-                .orElseGet(() -> {
+                .orElseGet(() -> ViolacoesDoBanco.gravando(() -> {
                     PessoaEntidade entidade = new PessoaEntidade(tmdbId, nome);
                     persist(entidade);
                     return entidade;
-                });
+                }));
     }
 }

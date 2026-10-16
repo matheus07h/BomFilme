@@ -51,7 +51,7 @@ class RepositorioDeSalasPanache implements RepositorioDeSalas, PanacheRepository
     @Transactional
     public Sala criar(long cinemaId, String nome) {
         SalaEntidade entidade = new SalaEntidade(referenciaDoCinema(cinemaId), nome);
-        persistAndFlush(entidade);
+        ViolacoesDoBanco.gravando(() -> persistAndFlush(entidade));
         return entidade.paraDominio();
     }
 
@@ -63,7 +63,7 @@ class RepositorioDeSalasPanache implements RepositorioDeSalas, PanacheRepository
             entidade.cinema = referenciaDoCinema(cinemaId);
             entidade.nome = nome;
         });
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrada.map(SalaEntidade::paraDominio);
     }
 
@@ -71,7 +71,7 @@ class RepositorioDeSalasPanache implements RepositorioDeSalas, PanacheRepository
     @Transactional
     public boolean remover(long id) {
         boolean removida = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removida;
     }
 

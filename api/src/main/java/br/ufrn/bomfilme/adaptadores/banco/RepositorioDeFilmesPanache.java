@@ -79,6 +79,10 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
     @Override
     @Transactional
     public Filme salvar(Filme filme) {
+        return ViolacoesDoBanco.gravando(() -> gravar(filme));
+    }
+
+    private Filme gravar(Filme filme) {
         FilmeEntidade entidade = find("tmdbId", filme.tmdbId()).<FilmeEntidade>firstResultOptional()
                 .orElseGet(FilmeEntidade::new);
 
@@ -108,7 +112,7 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
     @Transactional
     public boolean remover(long id) {
         boolean removido = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removido;
     }
 
@@ -117,7 +121,7 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
     public boolean atualizarPopularidade(long tmdbId, Double popularidade) {
         Optional<FilmeEntidade> encontrado = find("tmdbId", tmdbId).firstResultOptional();
         encontrado.ifPresent(entidade -> entidade.popularidade = popularidade);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrado.isPresent();
     }
 

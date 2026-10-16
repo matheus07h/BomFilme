@@ -60,7 +60,7 @@ class RepositorioDeCinemasPanache implements RepositorioDeCinemas, PanacheReposi
     @Transactional
     public Cinema criar(long redeId, String nome, String cidade, String uf) {
         CinemaEntidade entidade = new CinemaEntidade(referenciaDaRede(redeId), nome, cidade, uf);
-        persistAndFlush(entidade);
+        ViolacoesDoBanco.gravando(() -> persistAndFlush(entidade));
         return entidade.paraDominio();
     }
 
@@ -74,7 +74,7 @@ class RepositorioDeCinemasPanache implements RepositorioDeCinemas, PanacheReposi
             entidade.cidade = cidade;
             entidade.uf = uf;
         });
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return encontrado.map(CinemaEntidade::paraDominio);
     }
 
@@ -82,7 +82,7 @@ class RepositorioDeCinemasPanache implements RepositorioDeCinemas, PanacheReposi
     @Transactional
     public boolean remover(long id) {
         boolean removido = deleteById(id);
-        flush();
+        ViolacoesDoBanco.gravando(this::flush);
         return removido;
     }
 
