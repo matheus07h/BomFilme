@@ -3,6 +3,7 @@ go = "1.27.1"
 java = "temurin-25"
 
 [tasks.build]
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml package -DskipTests && cd services && go build ./...'
 description = "Compila a API Java e o servico Go"
 run = """
 ./api/mvnw -B -f api/pom.xml package -DskipTests
@@ -10,6 +11,7 @@ cd services && go build ./...
 """
 
 [tasks.test]
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml test && cd services && go test ./...'
 description = "Executa os testes da API Java e do servico Go"
 run = """
 ./api/mvnw -B -f api/pom.xml test
@@ -17,6 +19,7 @@ cd services && go test ./...
 """
 
 [tasks.lint]
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml validate && cd services && go vet ./...'
 description = "Valida os projetos Java e Go sem alterar arquivos"
 run = """
 ./api/mvnw -B -f api/pom.xml validate
@@ -32,6 +35,7 @@ description = "Encerra o ambiente local"
 run = "docker compose down"
 
 [tasks.ci]
+run_windows = 'mise run lint && mise run build && mise run test'
 description = "Reproduz localmente as verificacoes do GitHub Actions"
 run = """
 mise run lint

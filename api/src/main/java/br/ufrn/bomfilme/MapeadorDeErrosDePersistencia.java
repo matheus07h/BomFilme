@@ -39,6 +39,10 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
             return resposta(Response.Status.CONFLICT, "a operação viola um vínculo com outro registro");
         }
 
+        if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
+            return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
+        }
+
         LOG.error("Erro de persistência não tratado", excecao);
         return resposta(Response.Status.INTERNAL_SERVER_ERROR, "erro interno ao acessar o banco de dados");
     }
