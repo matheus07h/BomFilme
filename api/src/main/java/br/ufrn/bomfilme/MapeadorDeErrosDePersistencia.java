@@ -36,10 +36,6 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
             return resposta(Response.Status.CONFLICT, "já existe um registro com esses dados");
         }
         if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
-            return resposta(Response.Status.CONFLICT, "a operação viola um vínculo com outro registro");
-        }
-
-        if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
             return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
         }
 
