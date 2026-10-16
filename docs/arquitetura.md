@@ -39,21 +39,14 @@ flowchart LR
     TMDB --> Dominio
 ```
 
-| Módulo e pacote | O que mora nele | O que ele conhece |
-| --- | --- | --- |
-| `dominio` | Registros (`Cinema`, `Sala`, `Sessao`, `Filme`, ...), portas de repositório, porta do catálogo externo e `ErroDeDominio` | Nada: o pom não declara dependência nenhuma |
-| `aplicacao` | Casos de uso (`ServicoDeSessoes`, `ServicoDeFilmes`, ...) | Só as portas do domínio |
-| `adaptadores/http` | Recursos REST, mapeadores de exceção, DTOs de entrada e saída | Domínio e casos de uso |
-| `adaptadores/banco` | Entidades JPA (`*Entidade`) e implementações Panache das portas | Domínio |
-| `adaptadores/tmdb` | Cliente REST do TMDB e o formato de resposta dele | Domínio |
+A direção da dependência é garantida pelo build, não por convenção: o módulo `dominio`
+não declara dependência nenhuma, então um `import jakarta.persistence` ali não compila.
+O que o Maven não cobre é a regra *entre pacotes* dentro de `adaptadores` — que `http`
+não fale com `banco`, por exemplo — e isso fica no teste de arquitetura.
 
-Três consequências práticas dessa separação:
-
-- **O domínio é Java puro, e o compilador garante.** `dominio` é um módulo Maven sem dependências, então um `import jakarta.persistence` ali não compila — a regra não depende de ninguém rodar um teste. As entidades JPA são classes separadas, no adaptador de banco, e nem são visíveis de fora dele.
-- **Os casos de uso recusam operações sem conhecer HTTP.** Eles lançam `ErroDeDominio.NaoEncontrado`, `Conflito`, `RegraViolada` ou `ServicoExternoIndisponivel`. Um único mapeador, em `adaptadores/http`, traduz isso para status e *problem details*.
-- **Reconhecer um SQLSTATE é conhecimento de persistência.** A tradução de violação de unicidade, chave estrangeira e sobreposição de horários acontece em `adaptadores/banco`, não num `ExceptionMapper` — o que impediria o adaptador HTTP de importar JPA.
-
-A direção entre camadas é garantida pelo build. O que o Maven não cobre é a regra *entre pacotes* dentro de `adaptadores` — que `http` não fale com `banco`, por exemplo — e isso fica em `ArquiteturaTest`, que lê o bytecode com ArchUnit. Um dos casos é um controle que confirma que a regra ainda acusa quando deve.
+Essa escolha custa um pouco de cerimônia no build e paga em duas coisas: o núcleo do
+negócio sobrevive a uma troca de framework, e a regra não depende de ninguém lembrar
+dela.
 
 ## Fluxo de compra previsto
 
