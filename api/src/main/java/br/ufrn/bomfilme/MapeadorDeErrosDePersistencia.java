@@ -1,7 +1,6 @@
 package br.ufrn.bomfilme;
 
 import jakarta.persistence.PersistenceException;
-import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import jakarta.ws.rs.ext.ExceptionMapper;
 import jakarta.ws.rs.ext.Provider;
@@ -36,17 +35,17 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
         ConstraintViolationException violacao = procurarViolacao(excecao);
 
         if (violacao != null && VIOLACAO_DE_UNICIDADE.equals(violacao.getSQLState())) {
-            return resposta(Response.Status.CONFLICT, "já existe um registro com esses dados");
+            return Problemas.conflito("já existe um registro com esses dados");
         }
         if (violacao != null && VIOLACAO_DE_CHAVE_ESTRANGEIRA.equals(violacao.getSQLState())) {
-            return resposta(Response.Status.CONFLICT, "operação conflita com registros vinculados");
+            return Problemas.conflito("operação conflita com registros vinculados");
         }
         if (violacao != null && VIOLACAO_DE_EXCLUSAO.equals(violacao.getSQLState())) {
-            return resposta(Response.Status.CONFLICT, "a sala já possui uma sessão nesse horário");
+            return Problemas.conflito("a sala já possui uma sessão nesse horário");
         }
 
         LOG.error("Erro de persistência não tratado", excecao);
-        return resposta(Response.Status.INTERNAL_SERVER_ERROR, "erro interno ao acessar o banco de dados");
+        return Problemas.erroInterno("erro interno ao acessar o banco de dados");
     }
 
     private static ConstraintViolationException procurarViolacao(Throwable erro) {
@@ -63,10 +62,4 @@ public class MapeadorDeErrosDePersistencia implements ExceptionMapper<Persistenc
         return null;
     }
 
-    private static Response resposta(Response.Status status, String mensagem) {
-        return Response.status(status)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(new Erro(mensagem))
-                .build();
-    }
 }

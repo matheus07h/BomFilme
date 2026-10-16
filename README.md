@@ -55,6 +55,29 @@ A API fica disponível em `http://localhost:8080`. O serviço Go ainda encerra a
 
 A task `mise run ci` executa lint, build e testes, na mesma ordem usada pelo GitHub Actions.
 
+## Referência da API
+
+A especificação OpenAPI é gerada do código e fica acessível com o ambiente no ar:
+
+| Recurso | Endereço |
+| --- | --- |
+| Especificação OpenAPI | <http://localhost:8080/q/openapi> |
+| Swagger UI | <http://localhost:8080/q/swagger-ui> |
+
+Os erros seguem o formato *problem details* da [RFC 9457](https://www.rfc-editor.org/rfc/rfc9457), servidos como `application/problem+json`:
+
+```json
+{
+  "type": "urn:bomfilme:erro:entrada-invalida",
+  "title": "Entrada inválida",
+  "status": 400,
+  "detail": "a requisição tem campos inválidos",
+  "violacoes": ["tamanho: tamanho deve ser menor ou igual a 100"]
+}
+```
+
+O membro `type` identifica a classe do erro e é estável, então o cliente pode comparar com ele. O `detail` descreve a ocorrência e pode mudar de texto. O `violacoes` só aparece quando a falha vem da validação de entrada.
+
 ## Sprint 0
 
 O escopo desta etapa é o planejamento e a base dos dois serviços compilando, com CI passando. As funcionalidades do MVP pertencem às próximas sprints.

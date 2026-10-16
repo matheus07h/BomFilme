@@ -189,7 +189,7 @@ class RecursoDeRedesTest {
                 .when().put("/redes/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -204,7 +204,7 @@ class RecursoDeRedesTest {
                 .when().put("/redes/{id}", id)
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -248,7 +248,7 @@ class RecursoDeRedesTest {
                 .when().delete("/redes/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -265,7 +265,7 @@ class RecursoDeRedesTest {
                 .when().delete("/redes/{id}", redeId)
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
 
         given().when().get("/redes/{id}", redeId).then().statusCode(200);
         given().when().get("/cinemas/{id}", cinemaId).then().statusCode(200);
@@ -280,7 +280,7 @@ class RecursoDeRedesTest {
                 .when().get("/redes/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -307,7 +307,7 @@ class RecursoDeRedesTest {
                 .when().post("/redes")
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test

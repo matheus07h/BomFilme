@@ -129,7 +129,7 @@ public class RecursoDeFilmesTest {
                 .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
                 .then()
                 .statusCode(422)
-                .body("mensagem", is("Filme sem data de lançamento no TMDB, não entra no catálogo"));
+                .body("detail", is("Filme sem data de lançamento no TMDB, não entra no catálogo"));
     }
 
     @Test
@@ -141,7 +141,7 @@ public class RecursoDeFilmesTest {
         given()
                 .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
                 .then().statusCode(502)
-                .body("mensagem", is("Falha ao consultar o TMDB"));
+                .body("detail", is("Falha ao consultar o TMDB"));
     }
 
     @Test
@@ -153,7 +153,7 @@ public class RecursoDeFilmesTest {
         given()
                 .when().post("/filmes/importar-basico/{tmdbId}", tmdbId)
                 .then().statusCode(502)
-                .body("mensagem", is("TMDB indisponível"));
+                .body("detail", is("TMDB indisponível"));
     }
 
     @Test
@@ -191,7 +191,7 @@ public class RecursoDeFilmesTest {
                 .when().get("/filmes/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -222,7 +222,7 @@ public class RecursoDeFilmesTest {
     void recusaTamanhoDePaginaAcimaDoMaximo() {
         given()
                 // Certifique-se de que RecursoDeFilme ou RecursoDeFilmes possui essa constante visível
-                .queryParam("tamanho", RecursoDeFilme.TAMANHO_MAXIMO + 1)
+                .queryParam("tamanho", Paginacao.TAMANHO_MAXIMO + 1)
                 .when().get("/filmes")
                 .then()
                 .statusCode(400);
@@ -247,7 +247,7 @@ public class RecursoDeFilmesTest {
                 .when().delete("/filmes/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -268,7 +268,7 @@ public class RecursoDeFilmesTest {
         given()
                 .when().delete("/filmes/{id}", id)
                 .then().statusCode(409)
-                .body("mensagem", is("operação conflita com registros vinculados"));
+                .body("detail", is("operação conflita com registros vinculados"));
 
         given()
                 .when().get("/filmes/{id}", id)

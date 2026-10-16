@@ -23,13 +23,17 @@ import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import org.eclipse.microprofile.openapi.annotations.Operation;
+import org.eclipse.microprofile.openapi.annotations.media.Content;
+import org.eclipse.microprofile.openapi.annotations.media.Schema;
+import org.eclipse.microprofile.openapi.annotations.parameters.Parameter;
+import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
+import org.eclipse.microprofile.openapi.annotations.tags.Tag;
 
 @Path("/sessoes")
-@Produces(MediaType.APPLICATION_JSON)
+@Produces({MediaType.APPLICATION_JSON, Problema.MEDIA_TYPE})
+@Tag(name = "Sessões")
 public class RecursoDeSessoes {
-
-    /** Status para entrada bem formada que não pode ser processada (RFC 9110, seção 15.5.21). */
-    private static final int ENTIDADE_NAO_PROCESSAVEL = 422;
 
     @Inject
     RepositorioDeSessoes sessoes;
@@ -44,15 +48,26 @@ public class RecursoDeSessoes {
     RepositorioDeFilmes filmes;
 
     @GET
+    @Operation(summary = "Lista as sessões",
+            description = "Listagem paginada, ordenada por horário de início, com filtro por cinema, sala e filme.")
+    @APIResponse(responseCode = "200", description = "Página de sessões, vazia quando não há resultados",
+            content = @Content(schema = @Schema(implementation = Sessao[].class)))
+    @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public List<Sessao> listar(
+            @Parameter(description = "Filtra pelas sessões de um cinema")
             @QueryParam("cinemaId")
             @Positive(message = "cinemaId deve ser positivo") Long cinemaId,
+            @Parameter(description = "Filtra pelas sessões de uma sala")
             @QueryParam("salaId")
             @Positive(message = "salaId deve ser positivo") Long salaId,
+            @Parameter(description = "Filtra pelas sessões de um filme")
             @QueryParam("filmeId")
             @Positive(message = "filmeId deve ser positivo") Long filmeId,
+            @Parameter(description = "Índice da página, começando em zero")
             @QueryParam("pagina") @DefaultValue("0")
             @Min(value = 0, message = "pagina deve ser maior ou igual a zero") int pagina,
+            @Parameter(description = "Quantidade de sessões por página, entre 1 e 100")
             @QueryParam("tamanho") @DefaultValue("20")
             @Min(value = 1, message = "tamanho deve ser maior ou igual a um")
             @Max(value = Paginacao.TAMANHO_MAXIMO, message = "tamanho deve ser menor ou igual a 100") int tamanho) {
@@ -61,7 +76,12 @@ public class RecursoDeSessoes {
 
     @GET
     @Path("/{id}")
-    public Response porId(@PathParam("id") long id) {
+    @Operation(summary = "Busca uma sessão por id")
+    @APIResponse(responseCode = "200", description = "A sessão encontrada",
+            content = @Content(schema = @Schema(implementation = Sessao.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sessão com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response porId(@Parameter(description = "Id da sessão") @PathParam("id") long id) {
         return sessoes.porId(id)
                 .map(sessao -> Response.ok(sessao).build())
                 .orElseGet(() -> naoEncontrada("sessão " + id + " não encontrada"));
@@ -69,6 +89,22 @@ public class RecursoDeSessoes {
 
     @POST
     @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Programa uma sessão",
+            description = """
+                    O horário de fim é calculado a partir da duração do filme, por isso o filme \
+                    precisa ter duração cadastrada. Duas sessões da mesma sala não podem se \
+                    sobrepor; a garantia final é uma restrição de exclusão no banco, que vale \
+                    também para requisições simultâneas.""")
+    @APIResponse(responseCode = "201", description = "Sessão criada; o endereço vem no cabeçalho Location",
+            content = @Content(schema = @Schema(implementation = Sessao.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sala, ou filme, com o id informado",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sala já possui uma sessão nesse horário",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "422", description = "O filme não tem duração cadastrada",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response criar(@Valid @NotNull(message = "o corpo da requisição é obrigatório") NovaSessao nova) {
         return validarProgramacao(nova, null).orElseGet(() -> {
             Sala sala = salas.porId(nova.salaId()).orElseThrow();
@@ -81,8 +117,20 @@ public class RecursoDeSessoes {
     @PUT
     @Path("/{id}")
     @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Reprograma uma sessão",
+            description = "A própria sessão é ignorada na verificação de sobreposição de horários.")
+    @APIResponse(responseCode = "200", description = "Sessão atualizada",
+            content = @Content(schema = @Schema(implementation = Sessao.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou campos inválidos",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "Não existe sessão, sala ou filme com o id informado",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sala já possui outra sessão nesse horário",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "422", description = "O filme não tem duração cadastrada",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     public Response atualizar(
-            @PathParam("id") long id,
+            @Parameter(description = "Id da sessão") @PathParam("id") long id,
             @Valid @NotNull(message = "o corpo da requisição é obrigatório") NovaSessao dados) {
         if (sessoes.porId(id).isEmpty()) {
             return naoEncontrada("sessão " + id + " não encontrada");
@@ -97,7 +145,14 @@ public class RecursoDeSessoes {
 
     @DELETE
     @Path("/{id}")
-    public Response remover(@PathParam("id") long id) {
+    @Operation(summary = "Cancela uma sessão",
+            description = "O cancelamento é recusado enquanto houver assentos ocupados na sessão.")
+    @APIResponse(responseCode = "204", description = "Sessão removida")
+    @APIResponse(responseCode = "404", description = "Não existe sessão com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "A sessão já possui assentos ocupados",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response remover(@Parameter(description = "Id da sessão") @PathParam("id") long id) {
         if (sessoes.porId(id).isEmpty()) {
             return naoEncontrada("sessão " + id + " não encontrada");
         }
@@ -112,7 +167,13 @@ public class RecursoDeSessoes {
 
     @GET
     @Path("/{id}/assentos")
-    public Response assentosDaSessao(@PathParam("id") long id) {
+    @Operation(summary = "Lista os assentos da sessão com a disponibilidade",
+            description = "Todos os assentos da sala, cada um marcado como disponível ou ocupado nesta sessão.")
+    @APIResponse(responseCode = "200", description = "Assentos da sala e a disponibilidade de cada um",
+            content = @Content(schema = @Schema(implementation = AssentoDisponibilidade[].class)))
+    @APIResponse(responseCode = "404", description = "Não existe sessão com esse id",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response assentosDaSessao(@Parameter(description = "Id da sessão") @PathParam("id") long id) {
         return sessoes.porId(id)
                 .map(this::listarDisponibilidade)
                 .orElseGet(() -> naoEncontrada("sessão " + id + " não encontrada"));
@@ -120,7 +181,18 @@ public class RecursoDeSessoes {
 
     @POST
     @Path("/{id}/assentos/{assentoId}")
-    public Response selecionarAssento(@PathParam("id") long id, @PathParam("assentoId") long assentoId) {
+    @Operation(summary = "Ocupa um assento na sessão",
+            description = """
+                    A unicidade por sessão e assento fica no banco, o que recusa a segunda de \
+                    duas ocupações simultâneas do mesmo assento.""")
+    @APIResponse(responseCode = "201", description = "Assento ocupado")
+    @APIResponse(responseCode = "404", description = "A sessão não existe, ou o assento não pertence à sala da sessão",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "O assento já está ocupado nessa sessão",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response selecionarAssento(
+            @Parameter(description = "Id da sessão") @PathParam("id") long id,
+            @Parameter(description = "Id do assento") @PathParam("assentoId") long assentoId) {
         Optional<Sessao> sessao = sessoes.porId(id);
         if (sessao.isEmpty()) {
             return naoEncontrada("sessão " + id + " não encontrada");
@@ -150,9 +222,8 @@ public class RecursoDeSessoes {
         }
         Integer duracao = filme.get().duracaoMinutos;
         if (duracao == null || duracao <= 0) {
-            return Optional.of(Response.status(ENTIDADE_NAO_PROCESSAVEL)
-                    .entity(new Erro("filme " + dados.filmeId() + " não tem duração cadastrada"))
-                    .build());
+            return Optional.of(Problemas.naoProcessavel(
+                    "filme " + dados.filmeId() + " não tem duração cadastrada"));
         }
         OffsetDateTime fim = dados.inicio().plusMinutes(duracao);
         if (sessoes.existeConflito(dados.salaId(), dados.inicio(), fim, sessaoAtual)) {
@@ -176,10 +247,10 @@ public class RecursoDeSessoes {
     }
 
     private static Response conflito(String mensagem) {
-        return Response.status(Response.Status.CONFLICT).entity(new Erro(mensagem)).build();
+        return Problemas.conflito(mensagem);
     }
 
     private static Response naoEncontrada(String mensagem) {
-        return Response.status(Response.Status.NOT_FOUND).entity(new Erro(mensagem)).build();
+        return Problemas.naoEncontrado(mensagem);
     }
 }

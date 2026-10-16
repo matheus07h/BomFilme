@@ -109,7 +109,7 @@ class RecursoDeSessoesTest {
                 .when().get("/sessoes/{id}/assentos", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -140,7 +140,7 @@ class RecursoDeSessoesTest {
                 .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id, assento.id)
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -155,6 +155,6 @@ class RecursoDeSessoesTest {
                 .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id, assentoDeOutraSala.id)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 }

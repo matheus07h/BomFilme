@@ -8,6 +8,9 @@
 
   <properties>
     <maven.compiler.release>25</maven.compiler.release>
+    <!-- Mantém os nomes dos parâmetros no bytecode: sem isso, as violações de validação
+         são reportadas como "arg5" em vez de "tamanho". -->
+    <maven.compiler.parameters>true</maven.compiler.parameters>
     <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
     <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
     <quarkus.platform.group-id>io.quarkus.platform</quarkus.platform.group-id>

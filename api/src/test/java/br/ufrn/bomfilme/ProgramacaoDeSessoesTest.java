@@ -143,7 +143,7 @@ class ProgramacaoDeSessoesTest {
                 .body(sessao(salaId, filmeId, AMANHA_AS_14H.plusHours(1)))
                 .when().post("/sessoes")
                 .then().statusCode(409)
-                .body("mensagem", is("a sala " + salaId + " já possui uma sessão nesse horário"));
+                .body("detail", is("a sala " + salaId + " já possui uma sessão nesse horário"));
     }
 
     @Test
@@ -247,15 +247,15 @@ class ProgramacaoDeSessoesTest {
         given().contentType(ContentType.JSON).body(sessao(999_999_999, filmeId, AMANHA_AS_14H))
                 .when().post("/sessoes")
                 .then().statusCode(404)
-                .body("mensagem", is("sala 999999999 não encontrada"));
+                .body("detail", is("sala 999999999 não encontrada"));
         given().contentType(ContentType.JSON).body(sessao(salaId, 999_999_999, AMANHA_AS_14H))
                 .when().post("/sessoes")
                 .then().statusCode(404)
-                .body("mensagem", is("filme 999999999 não encontrado"));
+                .body("detail", is("filme 999999999 não encontrado"));
         given().contentType(ContentType.JSON).body(sessao(salaId, semDuracao, AMANHA_AS_14H))
                 .when().post("/sessoes")
                 .then().statusCode(422)
-                .body("mensagem", is("filme " + semDuracao + " não tem duração cadastrada"));
+                .body("detail", is("filme " + semDuracao + " não tem duração cadastrada"));
         given().contentType(ContentType.JSON).body(sessao(salaId, filmeId, AMANHA_AS_14H))
                 .when().put("/sessoes/{id}", 999_999_999)
                 .then().statusCode(404);
@@ -279,7 +279,7 @@ class ProgramacaoDeSessoesTest {
         given().when().delete("/sessoes/{id}", livre).then().statusCode(404);
         given().when().delete("/sessoes/{id}", ocupada)
                 .then().statusCode(409)
-                .body("mensagem", is("sessão " + ocupada + " possui assentos ocupados e não pode ser removida"));
+                .body("detail", is("sessão " + ocupada + " possui assentos ocupados e não pode ser removida"));
     }
 
     private static ConstraintViolationException procurarViolacao(Throwable erro) {

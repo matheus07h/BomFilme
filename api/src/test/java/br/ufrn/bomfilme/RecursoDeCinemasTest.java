@@ -261,7 +261,7 @@ class RecursoDeCinemasTest {
                 .when().put("/cinemas/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -275,7 +275,7 @@ class RecursoDeCinemasTest {
                 .when().put("/cinemas/{id}", cinemaId)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
 
         given()
                 .when().get("/cinemas/{id}", cinemaId)
@@ -297,7 +297,7 @@ class RecursoDeCinemasTest {
                 .when().put("/cinemas/{id}", cinemaId)
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -359,7 +359,7 @@ class RecursoDeCinemasTest {
                 .when().delete("/cinemas/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -372,7 +372,7 @@ class RecursoDeCinemasTest {
                 .when().delete("/cinemas/{id}", cinemaId)
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
 
         given().when().get("/cinemas/{id}", cinemaId).then().statusCode(200);
 
@@ -469,7 +469,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas/{id}", 999_999)
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test
@@ -480,7 +480,7 @@ class RecursoDeCinemasTest {
                 .when().post("/cinemas")
                 .then()
                 .statusCode(404)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     /** Antes da validação, redeId ausente causava NullPointerException e resposta 500. */
@@ -535,7 +535,7 @@ class RecursoDeCinemasTest {
                 .when().post("/cinemas")
                 .then()
                 .statusCode(409)
-                .body("mensagem", notNullValue());
+                .body("detail", notNullValue());
     }
 
     @Test

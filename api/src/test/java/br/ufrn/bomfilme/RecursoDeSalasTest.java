@@ -169,7 +169,7 @@ class RecursoDeSalasTest {
         given().contentType(ContentType.JSON).body(sala(999_999_999, "Sala"))
                 .when().post("/salas")
                 .then().statusCode(404)
-                .body("mensagem", is("cinema 999999999 não encontrado"));
+                .body("detail", is("cinema 999999999 não encontrado"));
         given().contentType(ContentType.JSON).body(sala(criarCinema(), "Sala"))
                 .when().put("/salas/{id}", 999_999_999)
                 .then().statusCode(404);
@@ -196,13 +196,13 @@ class RecursoDeSalasTest {
         criarAssento(comAssento, "A", 1);
         given().when().delete("/salas/{id}", comAssento)
                 .then().statusCode(409)
-                .body("mensagem", is("sala " + comAssento + " possui assentos vinculados e não pode ser removida"));
+                .body("detail", is("sala " + comAssento + " possui assentos vinculados e não pode ser removida"));
 
         int comSessao = criarSala(criarCinema(), "Com sessão");
         criarSessao(comSessao);
         given().when().delete("/salas/{id}", comSessao)
                 .then().statusCode(409)
-                .body("mensagem", is("sala " + comSessao + " possui sessões vinculadas e não pode ser removida"));
+                .body("detail", is("sala " + comSessao + " possui sessões vinculadas e não pode ser removida"));
     }
 
     @Test
@@ -293,6 +293,6 @@ class RecursoDeSalasTest {
 
         given().when().delete("/salas/{salaId}/assentos/{id}", salaId, assentoId)
                 .then().statusCode(409)
-                .body("mensagem", is("assento " + assentoId + " está ocupado em alguma sessão e não pode ser removido"));
+                .body("detail", is("assento " + assentoId + " está ocupado em alguma sessão e não pode ser removido"));
     }
 }
