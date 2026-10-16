@@ -182,24 +182,18 @@ public class RecursoDeSalas {
     }
 
     private static Response conflito(String mensagem) {
-        return Response.status(Response.Status.CONFLICT).entity(new Erro(mensagem)).build();
+        return Problemas.conflito(mensagem);
     }
 
     private static Response salaNaoEncontrada(long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("sala " + id + " não encontrada"))
-                .build();
+        return Problemas.naoEncontrado("sala " + id + " não encontrada");
     }
 
     private static Response cinemaNaoEncontrado(long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("cinema " + id + " não encontrado"))
-                .build();
+        return Problemas.naoEncontrado("cinema " + id + " não encontrado");
     }
 
     private static Response assentoNaoEncontrado(long salaId, long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("assento " + id + " não encontrado na sala " + salaId))
-                .build();
+        return Problemas.naoEncontrado("assento " + id + " não encontrado na sala " + salaId);
     }
 }

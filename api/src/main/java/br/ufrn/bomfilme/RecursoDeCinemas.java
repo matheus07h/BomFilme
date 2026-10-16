@@ -104,9 +104,7 @@ public class RecursoDeCinemas {
             return cinemaNaoEncontrado(id);
         }
         if (cinemas.possuiSalas(id)) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity(new Erro("cinema " + id + " possui salas vinculadas e não pode ser removido"))
-                    .build();
+            return Problemas.conflito("cinema " + id + " possui salas vinculadas e não pode ser removido");
         }
         if (!cinemas.remover(id)) {
             return cinemaNaoEncontrado(id);
@@ -115,14 +113,10 @@ public class RecursoDeCinemas {
     }
 
     private static Response cinemaNaoEncontrado(long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("cinema " + id + " não encontrado"))
-                .build();
+        return Problemas.naoEncontrado("cinema " + id + " não encontrado");
     }
 
     private static Response redeNaoEncontrada(long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("rede " + id + " não encontrada"))
-                .build();
+        return Problemas.naoEncontrado("rede " + id + " não encontrada");
     }
 }

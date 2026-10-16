@@ -28,8 +28,6 @@ import java.util.Set;
 @Produces(MediaType.APPLICATION_JSON)
 public class RecursoDeSessoes {
 
-    /** Status para entrada bem formada que não pode ser processada (RFC 9110, seção 15.5.21). */
-    private static final int ENTIDADE_NAO_PROCESSAVEL = 422;
 
     @Inject
     RepositorioDeSessoes sessoes;
@@ -150,9 +148,8 @@ public class RecursoDeSessoes {
         }
         Integer duracao = filme.get().duracaoMinutos;
         if (duracao == null || duracao <= 0) {
-            return Optional.of(Response.status(ENTIDADE_NAO_PROCESSAVEL)
-                    .entity(new Erro("filme " + dados.filmeId() + " não tem duração cadastrada"))
-                    .build());
+            return Optional.of(Problemas.naoProcessavel(
+                    "filme " + dados.filmeId() + " não tem duração cadastrada"));
         }
         OffsetDateTime fim = dados.inicio().plusMinutes(duracao);
         if (sessoes.existeConflito(dados.salaId(), dados.inicio(), fim, sessaoAtual)) {
@@ -176,10 +173,10 @@ public class RecursoDeSessoes {
     }
 
     private static Response conflito(String mensagem) {
-        return Response.status(Response.Status.CONFLICT).entity(new Erro(mensagem)).build();
+        return Problemas.conflito(mensagem);
     }
 
     private static Response naoEncontrada(String mensagem) {
-        return Response.status(Response.Status.NOT_FOUND).entity(new Erro(mensagem)).build();
+        return Problemas.naoEncontrado(mensagem);
     }
 }

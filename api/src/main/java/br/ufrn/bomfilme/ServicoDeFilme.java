@@ -9,8 +9,6 @@ import jakarta.transaction.Transactional;
 import jakarta.ws.rs.NotFoundException;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
-import jakarta.ws.rs.core.MediaType;
-import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 
 import java.util.Comparator;
@@ -90,18 +88,12 @@ public class ServicoDeFilme {
             if (e.getResponse().getStatus() == 404) {
                 throw new NotFoundException("Não encontrado no TMDB");
             }
-            throw erroHttp(502, "Falha ao consultar o TMDB");
+            throw Problemas.comoExcecao(Problemas.servicoIndisponivel("Falha ao consultar o TMDB"));
         } catch (ProcessingException e) {
-            throw erroHttp(502, "TMDB indisponível");
+            throw Problemas.comoExcecao(Problemas.servicoIndisponivel("TMDB indisponível"));
         }
     }
 
-    private static WebApplicationException erroHttp(int status, String mensagem) {
-        return new WebApplicationException(Response.status(status)
-                .type(MediaType.APPLICATION_JSON)
-                .entity(new Erro(mensagem))
-                .build());
-    }
 
     private Filme buscarOuCriar(Long tmdbId) {
         return repositorio.buscarPorTmdbId(tmdbId).orElseGet(Filme::new);
@@ -119,7 +111,8 @@ public class ServicoDeFilme {
 
     private void preencherDadosBasicos(Filme filme, FilmeTMDBResponse dados) {
         if (dados.releaseDate() == null) {
-            throw erroHttp(422, "Filme sem data de lançamento no TMDB, não entra no catálogo");
+            throw Problemas.comoExcecao(Problemas.naoProcessavel(
+                    "Filme sem data de lançamento no TMDB, não entra no catálogo"));
         }
 
         filme.tmdbId = dados.id();

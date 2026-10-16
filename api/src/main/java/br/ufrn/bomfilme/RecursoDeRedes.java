@@ -75,9 +75,7 @@ public class RecursoDeRedes {
             return naoEncontrada(id);
         }
         if (cinemas.existePorRede(id)) {
-            return Response.status(Response.Status.CONFLICT)
-                    .entity(new Erro("rede " + id + " possui cinemas vinculados e não pode ser removida"))
-                    .build();
+            return Problemas.conflito("rede " + id + " possui cinemas vinculados e não pode ser removida");
         }
         if (!repositorio.remover(id)) {
             return naoEncontrada(id);
@@ -86,8 +84,6 @@ public class RecursoDeRedes {
     }
 
     private static Response naoEncontrada(long id) {
-        return Response.status(Response.Status.NOT_FOUND)
-                .entity(new Erro("rede " + id + " não encontrada"))
-                .build();
+        return Problemas.naoEncontrado("rede " + id + " não encontrada");
     }
 }
