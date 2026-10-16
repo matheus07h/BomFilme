@@ -65,7 +65,7 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("nome", hasItem(nome));
+                .body("itens.nome", hasItem(nome));
     }
 
     @Test
@@ -82,9 +82,9 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("size()", is(2))
-                .body("[0].id", is(primeira))
-                .body("[1].id", is(segunda));
+                .body("itens.size()", is(2))
+                .body("itens[0].id", is(primeira))
+                .body("itens[1].id", is(segunda));
 
         given()
                 .queryParam("nome", marca)
@@ -93,8 +93,8 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("size()", is(1))
-                .body("[0].id", is(terceira));
+                .body("itens.size()", is(1))
+                .body("itens[0].id", is(terceira));
 
         given()
                 .queryParam("nome", marca)
@@ -103,7 +103,7 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("$", empty());
+                .body("itens", empty());
     }
 
     @Test
@@ -117,8 +117,8 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("size()", is(1))
-                .body("[0].nome", is("Cine_Filtro " + marca));
+                .body("itens.size()", is(1))
+                .body("itens[0].nome", is("Cine_Filtro " + marca));
 
         given()
                 .queryParam("nome", "%")
@@ -126,7 +126,7 @@ class RecursoDeRedesTest {
                 .when().get("/redes")
                 .then()
                 .statusCode(200)
-                .body("nome", not(hasItem("CineXFiltro " + marca)));
+                .body("itens.nome", not(hasItem("CineXFiltro " + marca)));
     }
 
     @Test

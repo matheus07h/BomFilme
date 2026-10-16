@@ -3,6 +3,7 @@ package br.ufrn.bomfilme.adaptadores.http;
 import br.ufrn.bomfilme.aplicacao.ServicoDeRedes;
 import br.ufrn.bomfilme.dominio.Paginacao;
 import br.ufrn.bomfilme.dominio.RedeCinema;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -43,10 +44,10 @@ public class RecursoDeRedes {
     @Operation(summary = "Lista as redes de cinema",
             description = "Listagem paginada, ordenada por id para que a navegação entre páginas seja estável.")
     @APIResponse(responseCode = "200", description = "Página de redes, vazia quando não há resultados",
-            content = @Content(schema = @Schema(implementation = RedeCinema[].class)))
+            content = @Content(schema = @Schema(implementation = Pagina.class)))
     @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
-    public List<RedeCinema> listar(
+    public Pagina<RedeCinema> listar(
             @Parameter(description = "Filtra pelo nome da rede, sem diferenciar maiúsculas")
             @QueryParam("nome")
             @Size(max = 120, message = "nome deve ter no máximo 120 caracteres") String nome,

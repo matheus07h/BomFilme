@@ -4,6 +4,7 @@ import br.ufrn.bomfilme.aplicacao.ServicoDeCinemas;
 import br.ufrn.bomfilme.dominio.Cinema;
 import br.ufrn.bomfilme.dominio.FiltroDeCinemas;
 import br.ufrn.bomfilme.dominio.Paginacao;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -48,10 +49,10 @@ public class RecursoDeCinemas {
                     Listagem paginada, ordenada por id para que a navegação entre páginas seja \
                     estável. Os filtros de nome e cidade não diferenciam maiúsculas.""")
     @APIResponse(responseCode = "200", description = "Página de cinemas, vazia quando não há resultados",
-            content = @Content(schema = @Schema(implementation = Cinema[].class)))
+            content = @Content(schema = @Schema(implementation = Pagina.class)))
     @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
-    public List<Cinema> listar(
+    public Pagina<Cinema> listar(
             @Parameter(description = "Filtra pelos cinemas de uma rede")
             @QueryParam("redeId")
             @Positive(message = "redeId deve ser positivo") Long redeId,

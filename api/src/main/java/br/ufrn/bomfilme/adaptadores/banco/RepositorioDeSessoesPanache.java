@@ -3,6 +3,7 @@ package br.ufrn.bomfilme.adaptadores.banco;
 import br.ufrn.bomfilme.dominio.FiltroDeSessoes;
 import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
 import br.ufrn.bomfilme.dominio.Sessao;
+import br.ufrn.bomfilme.dominio.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
@@ -20,7 +21,7 @@ import java.util.Optional;
 class RepositorioDeSessoesPanache implements RepositorioDeSessoes, PanacheRepository<SessaoEntidade> {
 
     @Override
-    public List<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho) {
+    public Pagina<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho) {
         List<String> condicoes = new ArrayList<>();
         Map<String, Object> parametros = new HashMap<>();
 
@@ -41,9 +42,7 @@ class RepositorioDeSessoesPanache implements RepositorioDeSessoes, PanacheReposi
         PanacheQuery<SessaoEntidade> consulta = condicoes.isEmpty()
                 ? findAll(ordem)
                 : find(String.join(" and ", condicoes), ordem, parametros);
-        return consulta.page(Page.of(pagina, tamanho)).list().stream()
-                .map(SessaoEntidade::paraDominio)
-                .toList();
+        return Paginas.de(consulta, pagina, tamanho, SessaoEntidade::paraDominio);
     }
 
     @Override

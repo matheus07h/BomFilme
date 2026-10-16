@@ -5,6 +5,7 @@ import br.ufrn.bomfilme.dominio.Assento;
 import br.ufrn.bomfilme.dominio.FiltroDeSalas;
 import br.ufrn.bomfilme.dominio.Paginacao;
 import br.ufrn.bomfilme.dominio.Sala;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -47,10 +48,10 @@ public class RecursoDeSalas {
     @GET
     @Operation(summary = "Lista as salas", description = "Listagem paginada, com filtro por cinema e por nome.")
     @APIResponse(responseCode = "200", description = "Página de salas, vazia quando não há resultados",
-            content = @Content(schema = @Schema(implementation = Sala[].class)))
+            content = @Content(schema = @Schema(implementation = Pagina.class)))
     @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
-    public List<Sala> listar(
+    public Pagina<Sala> listar(
             @Parameter(description = "Filtra pelas salas de um cinema")
             @QueryParam("cinemaId")
             @Positive(message = "cinemaId deve ser positivo") Long cinemaId,
@@ -129,12 +130,12 @@ public class RecursoDeSalas {
     @Operation(summary = "Lista os assentos de uma sala",
             description = "Ordenados por fileira e número. A fileira do filtro não diferencia maiúsculas.")
     @APIResponse(responseCode = "200", description = "Página de assentos, vazia quando não há resultados",
-            content = @Content(schema = @Schema(implementation = Assento[].class)))
+            content = @Content(schema = @Schema(implementation = Pagina.class)))
     @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
     @APIResponse(responseCode = "404", description = "Não existe sala com esse id",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
-    public List<Assento> listarAssentos(
+    public Pagina<Assento> listarAssentos(
             @Parameter(description = "Id da sala") @PathParam("salaId") long salaId,
             @Parameter(description = "Filtra por fileira, com uma ou duas letras")
             @QueryParam("fileira")

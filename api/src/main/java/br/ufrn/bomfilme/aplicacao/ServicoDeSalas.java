@@ -7,6 +7,7 @@ import br.ufrn.bomfilme.dominio.RepositorioDeAssentos;
 import br.ufrn.bomfilme.dominio.RepositorioDeCinemas;
 import br.ufrn.bomfilme.dominio.RepositorioDeSalas;
 import br.ufrn.bomfilme.dominio.Sala;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -26,7 +27,7 @@ public class ServicoDeSalas {
     @Inject
     RepositorioDeAssentos assentos;
 
-    public List<Sala> listar(FiltroDeSalas filtro, int pagina, int tamanho) {
+    public Pagina<Sala> listar(FiltroDeSalas filtro, int pagina, int tamanho) {
         return salas.listar(filtro, pagina, tamanho);
     }
 
@@ -64,7 +65,7 @@ public class ServicoDeSalas {
         }
     }
 
-    public List<Assento> listarAssentos(long salaId, String fileira, int pagina, int tamanho) {
+    public Pagina<Assento> listarAssentos(long salaId, String fileira, int pagina, int tamanho) {
         if (salas.porId(salaId).isEmpty()) {
             throw salaNaoEncontrada(salaId);
         }

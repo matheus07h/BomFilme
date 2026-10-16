@@ -4,6 +4,7 @@ import br.ufrn.bomfilme.dominio.Busca;
 import br.ufrn.bomfilme.dominio.Cinema;
 import br.ufrn.bomfilme.dominio.FiltroDeCinemas;
 import br.ufrn.bomfilme.dominio.RepositorioDeCinemas;
+import br.ufrn.bomfilme.dominio.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
@@ -22,7 +23,7 @@ import java.util.Optional;
 class RepositorioDeCinemasPanache implements RepositorioDeCinemas, PanacheRepository<CinemaEntidade> {
 
     @Override
-    public List<Cinema> listar(FiltroDeCinemas filtro, int pagina, int tamanho) {
+    public Pagina<Cinema> listar(FiltroDeCinemas filtro, int pagina, int tamanho) {
         List<String> condicoes = new ArrayList<>();
         Map<String, Object> parametros = new HashMap<>();
 
@@ -46,9 +47,7 @@ class RepositorioDeCinemasPanache implements RepositorioDeCinemas, PanacheReposi
         PanacheQuery<CinemaEntidade> consulta = condicoes.isEmpty()
                 ? findAll(Sort.by("id"))
                 : find(String.join(" and ", condicoes), Sort.by("id"), parametros);
-        return consulta.page(Page.of(pagina, tamanho)).list().stream()
-                .map(CinemaEntidade::paraDominio)
-                .toList();
+        return Paginas.de(consulta, pagina, tamanho, CinemaEntidade::paraDominio);
     }
 
     @Override

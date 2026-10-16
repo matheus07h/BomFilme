@@ -4,6 +4,7 @@ import br.ufrn.bomfilme.dominio.Busca;
 import br.ufrn.bomfilme.dominio.FiltroDeSalas;
 import br.ufrn.bomfilme.dominio.RepositorioDeSalas;
 import br.ufrn.bomfilme.dominio.Sala;
+import br.ufrn.bomfilme.dominio.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
@@ -20,7 +21,7 @@ import java.util.Optional;
 class RepositorioDeSalasPanache implements RepositorioDeSalas, PanacheRepository<SalaEntidade> {
 
     @Override
-    public List<Sala> listar(FiltroDeSalas filtro, int pagina, int tamanho) {
+    public Pagina<Sala> listar(FiltroDeSalas filtro, int pagina, int tamanho) {
         List<String> condicoes = new ArrayList<>();
         Map<String, Object> parametros = new HashMap<>();
 
@@ -37,9 +38,7 @@ class RepositorioDeSalasPanache implements RepositorioDeSalas, PanacheRepository
         PanacheQuery<SalaEntidade> consulta = condicoes.isEmpty()
                 ? findAll(ordem)
                 : find(String.join(" and ", condicoes), ordem, parametros);
-        return consulta.page(Page.of(pagina, tamanho)).list().stream()
-                .map(SalaEntidade::paraDominio)
-                .toList();
+        return Paginas.de(consulta, pagina, tamanho, SalaEntidade::paraDominio);
     }
 
     @Override

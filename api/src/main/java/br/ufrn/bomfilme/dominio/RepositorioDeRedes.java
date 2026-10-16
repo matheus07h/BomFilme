@@ -1,11 +1,10 @@
 package br.ufrn.bomfilme.dominio;
 
-import java.util.List;
 import java.util.Optional;
 
 public interface RepositorioDeRedes {
 
-    List<RedeCinema> listar(String nome, int pagina, int tamanho);
+    Pagina<RedeCinema> listar(String nome, int pagina, int tamanho);
 
     Optional<RedeCinema> porId(long id);
 

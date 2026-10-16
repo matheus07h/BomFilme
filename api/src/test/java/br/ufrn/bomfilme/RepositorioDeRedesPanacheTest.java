@@ -39,7 +39,7 @@ class RepositorioDeRedesPanacheTest {
         Cinema cinema = cinemas.criar(rede.id(), "Praia Shopping", "Natal", "RN");
 
         var filtro = new FiltroDeCinemas(rede.id(), null, null, null);
-        assertEquals(1, cinemas.listar(filtro, 0, Paginacao.TAMANHO_PADRAO).size());
+        assertEquals(1, cinemas.listar(filtro, 0, Paginacao.TAMANHO_PADRAO).total());
         assertEquals(rede.id(), cinemas.porId(cinema.id()).orElseThrow().redeId());
     }
 

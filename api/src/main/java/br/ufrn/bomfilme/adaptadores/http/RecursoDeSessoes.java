@@ -5,6 +5,7 @@ import br.ufrn.bomfilme.dominio.AssentoDisponibilidade;
 import br.ufrn.bomfilme.dominio.FiltroDeSessoes;
 import br.ufrn.bomfilme.dominio.Paginacao;
 import br.ufrn.bomfilme.dominio.Sessao;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -44,10 +45,10 @@ public class RecursoDeSessoes {
     @Operation(summary = "Lista as sessões",
             description = "Listagem paginada, ordenada por horário de início, com filtro por cinema, sala e filme.")
     @APIResponse(responseCode = "200", description = "Página de sessões, vazia quando não há resultados",
-            content = @Content(schema = @Schema(implementation = Sessao[].class)))
+            content = @Content(schema = @Schema(implementation = Pagina.class)))
     @APIResponse(responseCode = "400", description = "Parâmetros de paginação ou filtro inválidos",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
-    public List<Sessao> listar(
+    public Pagina<Sessao> listar(
             @Parameter(description = "Filtra pelas sessões de um cinema")
             @QueryParam("cinemaId")
             @Positive(message = "cinemaId deve ser positivo") Long cinemaId,

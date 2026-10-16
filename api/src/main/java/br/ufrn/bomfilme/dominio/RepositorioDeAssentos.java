@@ -8,7 +8,7 @@ public interface RepositorioDeAssentos {
 
     List<Assento> porSala(long salaId);
 
-    List<Assento> listarDaSala(long salaId, String fileira, int pagina, int tamanho);
+    Pagina<Assento> listarDaSala(long salaId, String fileira, int pagina, int tamanho);
 
     Optional<Assento> porId(long id);
 

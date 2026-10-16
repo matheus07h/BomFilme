@@ -10,6 +10,7 @@ import br.ufrn.bomfilme.dominio.RepositorioDeFilmes;
 import br.ufrn.bomfilme.dominio.RepositorioDeSalas;
 import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
 import br.ufrn.bomfilme.dominio.Sessao;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.time.OffsetDateTime;
@@ -32,7 +33,7 @@ public class ServicoDeSessoes {
     @Inject
     RepositorioDeAssentos assentos;
 
-    public List<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho) {
+    public Pagina<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho) {
         return sessoes.listar(filtro, pagina, tamanho);
     }
 

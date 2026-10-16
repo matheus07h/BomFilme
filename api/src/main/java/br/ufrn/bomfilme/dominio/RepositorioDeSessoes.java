@@ -1,12 +1,11 @@
 package br.ufrn.bomfilme.dominio;
 
 import java.time.OffsetDateTime;
-import java.util.List;
 import java.util.Optional;
 
 public interface RepositorioDeSessoes {
 
-    List<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho);
+    Pagina<Sessao> listar(FiltroDeSessoes filtro, int pagina, int tamanho);
 
     Optional<Sessao> porId(long id);
 

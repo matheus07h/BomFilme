@@ -3,6 +3,7 @@ package br.ufrn.bomfilme.adaptadores.banco;
 import br.ufrn.bomfilme.dominio.Busca;
 import br.ufrn.bomfilme.dominio.RedeCinema;
 import br.ufrn.bomfilme.dominio.RepositorioDeRedes;
+import br.ufrn.bomfilme.dominio.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
@@ -16,13 +17,11 @@ import java.util.Optional;
 class RepositorioDeRedesPanache implements RepositorioDeRedes, PanacheRepository<RedeCinemaEntidade> {
 
     @Override
-    public List<RedeCinema> listar(String nome, int pagina, int tamanho) {
+    public Pagina<RedeCinema> listar(String nome, int pagina, int tamanho) {
         PanacheQuery<RedeCinemaEntidade> consulta = Busca.vazia(nome)
                 ? findAll(Sort.by("id"))
                 : find("lower(nome) like ?1 escape '\\'", Sort.by("id"), Busca.contendo(nome));
-        return consulta.page(Page.of(pagina, tamanho)).list().stream()
-                .map(RedeCinemaEntidade::paraDominio)
-                .toList();
+        return Paginas.de(consulta, pagina, tamanho, RedeCinemaEntidade::paraDominio);
     }
 
     @Override

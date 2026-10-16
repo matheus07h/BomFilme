@@ -119,15 +119,15 @@ class RecursoDeSalasTest {
         given().queryParam("cinemaId", cinemaId).queryParam("tamanho", 2)
                 .when().get("/salas")
                 .then().statusCode(200)
-                .body("id", contains(primeira, segunda));
+                .body("itens.id", contains(primeira, segunda));
         given().queryParam("cinemaId", cinemaId).queryParam("tamanho", 2).queryParam("pagina", 1)
                 .when().get("/salas")
                 .then().statusCode(200)
-                .body("id", contains(vip));
+                .body("itens.id", contains(vip));
         given().queryParam("cinemaId", cinemaId).queryParam("nome", "vi")
                 .when().get("/salas")
                 .then().statusCode(200)
-                .body("id", contains(vip));
+                .body("itens.id", contains(vip));
     }
 
     @Test
@@ -216,11 +216,11 @@ class RecursoDeSalasTest {
 
         given().when().get("/salas/{id}/assentos", salaId)
                 .then().statusCode(200)
-                .body("id", contains(a1, a2, assentoId));
+                .body("itens.id", contains(a1, a2, assentoId));
         given().queryParam("fileira", "a").queryParam("tamanho", 1).queryParam("pagina", 1)
                 .when().get("/salas/{id}/assentos", salaId)
                 .then().statusCode(200)
-                .body("id", contains(a2));
+                .body("itens.id", contains(a2));
 
         given().contentType(ContentType.JSON)
                 .body(Map.of("fileira", "C", "numero", 10))

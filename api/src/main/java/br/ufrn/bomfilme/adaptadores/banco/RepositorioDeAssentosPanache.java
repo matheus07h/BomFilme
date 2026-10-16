@@ -3,6 +3,7 @@ package br.ufrn.bomfilme.adaptadores.banco;
 import br.ufrn.bomfilme.dominio.Assento;
 import br.ufrn.bomfilme.dominio.Busca;
 import br.ufrn.bomfilme.dominio.RepositorioDeAssentos;
+import br.ufrn.bomfilme.dominio.Pagina;
 import io.quarkus.hibernate.orm.panache.PanacheQuery;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
 import io.quarkus.panache.common.Page;
@@ -25,14 +26,12 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
     }
 
     @Override
-    public List<Assento> listarDaSala(long salaId, String fileira, int pagina, int tamanho) {
+    public Pagina<Assento> listarDaSala(long salaId, String fileira, int pagina, int tamanho) {
         Sort ordem = Sort.by("fileira").and("numero").and("id");
         PanacheQuery<AssentoEntidade> consulta = Busca.vazia(fileira)
                 ? find("sala.id = ?1", ordem, salaId)
                 : find("sala.id = ?1 and fileira = ?2", ordem, salaId, fileira);
-        return consulta.page(Page.of(pagina, tamanho)).list().stream()
-                .map(AssentoEntidade::paraDominio)
-                .toList();
+        return Paginas.de(consulta, pagina, tamanho, AssentoEntidade::paraDominio);
     }
 
     @Override

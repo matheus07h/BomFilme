@@ -201,14 +201,14 @@ class ProgramacaoDeSessoesTest {
 
         given().queryParam("salaId", salaId).when().get("/sessoes")
                 .then().statusCode(200)
-                .body("id", contains(cedo, tarde));
+                .body("itens.id", contains(cedo, tarde));
         given().queryParam("cinemaId", cinemaId).queryParam("filmeId", filmeId).when().get("/sessoes")
                 .then().statusCode(200)
-                .body("id", contains(outra, tarde));
+                .body("itens.id", contains(outra, tarde));
         given().queryParam("cinemaId", cinemaId).queryParam("tamanho", 1).queryParam("pagina", 2)
                 .when().get("/sessoes")
                 .then().statusCode(200)
-                .body("id", contains(tarde));
+                .body("itens.id", contains(tarde));
         given().queryParam("salaId", 0).when().get("/sessoes").then().statusCode(400);
         given().queryParam("tamanho", 101).when().get("/sessoes").then().statusCode(400);
     }

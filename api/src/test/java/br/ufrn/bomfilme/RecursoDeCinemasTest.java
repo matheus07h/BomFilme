@@ -102,13 +102,13 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("size()", is(1))
-                .body("[0].id", is(cinemaId))
-                .body("[0].redeId", is(redeId))
-                .body("[0].nome", is("Midway"))
-                .body("[0].cidade", is("Natal"))
-                .body("[0].uf", is("RN"))
-                .body("[0].criadoEm", notNullValue());
+                .body("itens.size()", is(1))
+                .body("itens[0].id", is(cinemaId))
+                .body("itens[0].redeId", is(redeId))
+                .body("itens[0].nome", is("Midway"))
+                .body("itens[0].cidade", is("Natal"))
+                .body("itens[0].uf", is("RN"))
+                .body("itens[0].criadoEm", notNullValue());
     }
 
     @Test
@@ -127,7 +127,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("nome", hasItem(nome));
+                .body("itens.nome", hasItem(nome));
     }
 
     @Test
@@ -144,7 +144,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("id", contains(natal, recife));
+                .body("itens.id", contains(natal, recife));
 
         given()
                 .queryParam("redeId", redeId)
@@ -152,7 +152,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("id", contains(recife));
+                .body("itens.id", contains(recife));
 
         given()
                 .queryParam("redeId", redeId)
@@ -160,7 +160,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("id", contains(natal));
+                .body("itens.id", contains(natal));
 
         given()
                 .queryParam("redeId", redeId)
@@ -169,7 +169,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("id", contains(natal));
+                .body("itens.id", contains(natal));
 
         given()
                 .queryParam("redeId", redeId)
@@ -177,7 +177,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("$", empty());
+                .body("itens", empty());
     }
 
     @Test
@@ -235,14 +235,14 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("$", empty());
+                .body("itens", empty());
 
         given()
                 .queryParam("redeId", destino)
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("id", contains(cinemaId));
+                .body("itens.id", contains(cinemaId));
     }
 
     @Test
@@ -388,9 +388,9 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("size()", is(2))
-                .body("[0].id", is(primeiroId))
-                .body("[1].id", is(segundoId));
+                .body("itens.size()", is(2))
+                .body("itens[0].id", is(primeiroId))
+                .body("itens[1].id", is(segundoId));
 
         given()
                 .queryParam("redeId", redeId)
@@ -399,8 +399,8 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("size()", is(1))
-                .body("[0].id", is(terceiroId));
+                .body("itens.size()", is(1))
+                .body("itens[0].id", is(terceiroId));
     }
 
     @Test
@@ -415,7 +415,7 @@ class RecursoDeCinemasTest {
                 .when().get("/cinemas")
                 .then()
                 .statusCode(200)
-                .body("$", empty());
+                .body("itens", empty());
     }
 
     @Test

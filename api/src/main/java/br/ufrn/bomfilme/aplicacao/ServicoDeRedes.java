@@ -4,6 +4,7 @@ import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import br.ufrn.bomfilme.dominio.RedeCinema;
 import br.ufrn.bomfilme.dominio.RepositorioDeCinemas;
 import br.ufrn.bomfilme.dominio.RepositorioDeRedes;
+import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.util.List;
@@ -18,7 +19,7 @@ public class ServicoDeRedes {
     @Inject
     RepositorioDeCinemas cinemas;
 
-    public List<RedeCinema> listar(String nome, int pagina, int tamanho) {
+    public Pagina<RedeCinema> listar(String nome, int pagina, int tamanho) {
         return redes.listar(nome, pagina, tamanho);
     }
 
