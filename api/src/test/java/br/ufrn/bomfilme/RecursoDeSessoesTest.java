@@ -5,102 +5,52 @@ import static org.hamcrest.Matchers.hasItem;
 import static org.hamcrest.Matchers.is;
 import static org.hamcrest.Matchers.notNullValue;
 
-import io.quarkus.narayana.jta.QuarkusTransaction;
+import br.ufrn.bomfilme.dominio.Assento;
+import br.ufrn.bomfilme.dominio.Sala;
+import br.ufrn.bomfilme.dominio.Sessao;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
-import java.time.OffsetDateTime;
-import java.time.LocalDate;
-import java.util.UUID;
-import java.util.concurrent.atomic.AtomicLong;
 import org.junit.jupiter.api.Test;
 
 /** Testes de ponta a ponta do recurso /sessoes/{id}/assentos (issue #6). */
 @QuarkusTest
 class RecursoDeSessoesTest {
 
-    private static final AtomicLong PROXIMO_TMDB_ID = new AtomicLong(1_000_000);
-
     @Inject
-    EntityManager em;
-
-    private static String nomeUnico(String prefixo) {
-        return prefixo + " " + UUID.randomUUID().toString().substring(0, 8);
-    }
-
-    /** Cria rede, cinema e sala numa única transação e devolve a sala persistida. */
-    private Sala criarSala() {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            RedeCinema rede = new RedeCinema(nomeUnico("Rede"));
-            em.persist(rede);
-            Cinema cinema = new Cinema(rede, nomeUnico("Cinema"), "Natal", "RN");
-            em.persist(cinema);
-            Sala sala = new Sala(cinema, nomeUnico("Sala"));
-            em.persist(sala);
-            return sala;
-        });
-    }
-
-    private Assento criarAssento(Sala sala, String fileira, int numero) {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            Assento assento = new Assento(sala, fileira, numero);
-            em.persist(assento);
-            return assento;
-        });
-    }
-
-    private Sessao criarSessao(Sala sala) {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            Filme filme = new Filme();
-            filme.tmdbId = PROXIMO_TMDB_ID.incrementAndGet();
-            filme.titulo = nomeUnico("Filme");
-            filme.tituloOriginal = filme.titulo;
-            filme.sinopse = "Sinopse de teste";
-            filme.dataLancamento = LocalDate.of(2020, 1, 1);
-            filme.notaMediaTmdb = 7.0;
-            em.persist(filme);
-            Sessao sessao = new Sessao(sala, filme.id, OffsetDateTime.now().plusDays(1), OffsetDateTime.now().plusDays(1).plusHours(2));
-            em.persist(sessao);
-            return sessao;
-        });
-    }
-
-    private void ocupar(Sessao sessao, Assento assento) {
-        QuarkusTransaction.requiringNew().run(() -> em.persist(new Ocupacao(sessao, assento)));
-    }
+    Fixtures dados;
 
     @Test
     void listaAssentosComDisponibilidadeDaSessao() {
-        Sala sala = criarSala();
-        Assento livre = criarAssento(sala, "A", 1);
-        Assento ocupado = criarAssento(sala, "A", 2);
-        Sessao sessao = criarSessao(sala);
-        ocupar(sessao, ocupado);
+        Sala sala = dados.sala();
+        Assento livre = dados.assento(sala, "A", 1);
+        Assento ocupado = dados.assento(sala, "A", 2);
+        Sessao sessao = dados.sessao(sala);
+        dados.ocupar(sessao, ocupado);
 
         given()
-                .when().get("/sessoes/{id}/assentos", sessao.id)
+                .when().get("/sessoes/{id}/assentos", sessao.id())
                 .then()
                 .statusCode(200)
                 .body("size()", is(2))
-                .body("find { it.id == " + livre.id + " }.disponivel", is(true))
-                .body("find { it.id == " + ocupado.id + " }.disponivel", is(false));
+                .body("find { it.id == " + livre.id() + " }.disponivel", is(true))
+                .body("find { it.id == " + ocupado.id() + " }.disponivel", is(false));
     }
 
     @Test
     void naoRetornaAssentosDeOutraSala() {
-        Sala sala = criarSala();
-        Assento assentoDaSala = criarAssento(sala, "B", 1);
-        Sessao sessao = criarSessao(sala);
+        Sala sala = dados.sala();
+        Assento assentoDaSala = dados.assento(sala, "B", 1);
+        Sessao sessao = dados.sessao(sala);
 
-        Sala outraSala = criarSala();
-        criarAssento(outraSala, "B", 1);
+        Sala outraSala = dados.sala();
+        dados.assento(outraSala, "B", 1);
 
         given()
-                .when().get("/sessoes/{id}/assentos", sessao.id)
+                .when().get("/sessoes/{id}/assentos", sessao.id())
                 .then()
                 .statusCode(200)
                 .body("size()", is(1))
-                .body("id", hasItem(assentoDaSala.id.intValue()));
+                .body("id", hasItem(assentoDaSala.id().intValue()));
     }
 
     @Test
@@ -114,30 +64,30 @@ class RecursoDeSessoesTest {
 
     @Test
     void selecionaUmAssentoDisponivelEDeixaOOutroOcupado() {
-        Sala sala = criarSala();
-        Assento assento = criarAssento(sala, "C", 1);
-        Sessao sessao = criarSessao(sala);
+        Sala sala = dados.sala();
+        Assento assento = dados.assento(sala, "C", 1);
+        Sessao sessao = dados.sessao(sala);
 
         given()
-                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id, assento.id)
+                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id(), assento.id())
                 .then().statusCode(201);
 
         given()
-                .when().get("/sessoes/{id}/assentos", sessao.id)
+                .when().get("/sessoes/{id}/assentos", sessao.id())
                 .then()
                 .statusCode(200)
-                .body("find { it.id == " + assento.id + " }.disponivel", is(false));
+                .body("find { it.id == " + assento.id() + " }.disponivel", is(false));
     }
 
     @Test
     void rejeitaSelecionarAssentoJaOcupado() {
-        Sala sala = criarSala();
-        Assento assento = criarAssento(sala, "C", 2);
-        Sessao sessao = criarSessao(sala);
-        ocupar(sessao, assento);
+        Sala sala = dados.sala();
+        Assento assento = dados.assento(sala, "C", 2);
+        Sessao sessao = dados.sessao(sala);
+        dados.ocupar(sessao, assento);
 
         given()
-                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id, assento.id)
+                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id(), assento.id())
                 .then()
                 .statusCode(409)
                 .body("detail", notNullValue());
@@ -145,14 +95,14 @@ class RecursoDeSessoesTest {
 
     @Test
     void rejeitaSelecionarAssentoDeOutraSala() {
-        Sala sala = criarSala();
-        Sessao sessao = criarSessao(sala);
+        Sala sala = dados.sala();
+        Sessao sessao = dados.sessao(sala);
 
-        Sala outraSala = criarSala();
-        Assento assentoDeOutraSala = criarAssento(outraSala, "D", 1);
+        Sala outraSala = dados.sala();
+        Assento assentoDeOutraSala = dados.assento(outraSala, "D", 1);
 
         given()
-                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id, assentoDeOutraSala.id)
+                .when().post("/sessoes/{id}/assentos/{assentoId}", sessao.id(), assentoDeOutraSala.id())
                 .then()
                 .statusCode(404)
                 .body("detail", notNullValue());

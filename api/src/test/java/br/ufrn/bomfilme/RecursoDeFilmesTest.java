@@ -8,13 +8,13 @@ import static org.hamcrest.Matchers.notNullValue;
 // IMPORTS DO MOCKITO QUE FALTAVAM:
 import static org.mockito.Mockito.*;
 
-import br.ufrn.bomfilme.dtos.response.CreditosTMDBResponse;
-import br.ufrn.bomfilme.dtos.response.EquipeResponse;
-import br.ufrn.bomfilme.dtos.response.FilmeTMDBResponse;
-import br.ufrn.bomfilme.dtos.response.GeneroTMDBResponse;
-import br.ufrn.bomfilme.dtos.response.ListarFilmesTMDBResponse;
-import br.ufrn.bomfilme.dtos.response.MembroElencoResponse;
-import br.ufrn.bomfilme.dtos.response.ResumoFilmeTMDBResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.CreditosTMDBResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.EquipeResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.FilmeTMDBResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.GeneroTMDBResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.ListarFilmesTMDBResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.MembroElencoResponse;
+import br.ufrn.bomfilme.adaptadores.tmdb.ResumoFilmeTMDBResponse;
 
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
@@ -23,10 +23,12 @@ import java.util.UUID;
 import java.util.concurrent.atomic.AtomicLong;
 
 import io.quarkus.test.InjectMock;
-import io.quarkus.narayana.jta.QuarkusTransaction;
+import br.ufrn.bomfilme.adaptadores.tmdb.ClienteTMDB;
+import br.ufrn.bomfilme.dominio.Paginacao;
+import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
+import br.ufrn.bomfilme.dominio.Sala;
 import io.quarkus.test.junit.QuarkusTest;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import jakarta.ws.rs.ProcessingException;
 import jakarta.ws.rs.WebApplicationException;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
@@ -45,7 +47,10 @@ public class RecursoDeFilmesTest {
     ClienteTMDB clienteTMDB;
 
     @Inject
-    EntityManager em;
+    Fixtures dados;
+
+    @Inject
+    RepositorioDeSessoes sessoes;
 
     private long tmdbIdUnico() {
         return PROXIMO_TMDB_ID.incrementAndGet();
@@ -253,17 +258,9 @@ public class RecursoDeFilmesTest {
     @Test
     void impedeDeletarFilmeComSessaoVinculada() {
         int id = importarBasico(tmdbIdUnico(), "Filme Com Sessão");
-        long sessaoId = QuarkusTransaction.requiringNew().call(() -> {
-            RedeCinema rede = new RedeCinema("Rede " + UUID.randomUUID());
-            em.persist(rede);
-            Cinema cinema = new Cinema(rede, "Cinema", "Natal", "RN");
-            em.persist(cinema);
-            Sala sala = new Sala(cinema, "Sala");
-            em.persist(sala);
-            Sessao sessao = new Sessao(sala, (long) id, OffsetDateTime.now().plusDays(1), OffsetDateTime.now().plusDays(1).plusHours(2));
-            em.persist(sessao);
-            return sessao.id;
-        });
+        Sala sala = dados.sala();
+        OffsetDateTime inicio = OffsetDateTime.now().plusDays(1);
+        long sessaoId = sessoes.criar(sala.id(), id, inicio, inicio.plusHours(2)).id();
 
         given()
                 .when().delete("/filmes/{id}", id)

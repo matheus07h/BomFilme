@@ -10,10 +10,11 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import io.quarkus.narayana.jta.QuarkusTransaction;
+import br.ufrn.bomfilme.adaptadores.http.MapeadorDeErrosDePersistencia;
+import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import jakarta.inject.Inject;
-import jakarta.persistence.EntityManager;
 import java.time.LocalDate;
 import java.time.OffsetDateTime;
 import java.time.ZoneOffset;
@@ -38,7 +39,10 @@ class ProgramacaoDeSessoesTest {
             .plusHours(14);
 
     @Inject
-    EntityManager em;
+    Fixtures dados;
+
+    @Inject
+    RepositorioDeSessoes sessoes;
 
     private static String nomeUnico(String prefixo) {
         return prefixo + " " + UUID.randomUUID().toString().substring(0, 8);
@@ -69,18 +73,7 @@ class ProgramacaoDeSessoesTest {
     }
 
     private long criarFilme(Integer duracaoMinutos) {
-        return QuarkusTransaction.requiringNew().call(() -> {
-            Filme filme = new Filme();
-            filme.tmdbId = PROXIMO_TMDB_ID.incrementAndGet();
-            filme.titulo = nomeUnico("Filme");
-            filme.tituloOriginal = filme.titulo;
-            filme.sinopse = "Sinopse de teste";
-            filme.dataLancamento = LocalDate.of(2020, 1, 1);
-            filme.notaMediaTmdb = 7.0;
-            filme.duracaoMinutos = duracaoMinutos;
-            em.persist(filme);
-            return filme.id;
-        });
+        return dados.filme(duracaoMinutos).id();
     }
 
     private static Map<String, Object> sessao(Object salaId, Object filmeId, OffsetDateTime inicio) {
@@ -166,11 +159,8 @@ class ProgramacaoDeSessoesTest {
         criarSessao((int) salaId, filmeId, AMANHA_AS_14H);
 
         RuntimeException erro = assertThrows(RuntimeException.class, () ->
-                QuarkusTransaction.requiringNew().run(() -> {
-                    em.persist(new Sessao(em.getReference(Sala.class, salaId), filmeId,
-                            AMANHA_AS_14H.plusMinutes(30), AMANHA_AS_14H.plusMinutes(150)));
-                    em.flush();
-                }));
+                sessoes.criar(salaId, filmeId,
+                        AMANHA_AS_14H.plusMinutes(30), AMANHA_AS_14H.plusMinutes(150)));
         ConstraintViolationException violacao = procurarViolacao(erro);
         assertNotNull(violacao);
         assertEquals(MapeadorDeErrosDePersistencia.VIOLACAO_DE_EXCLUSAO, violacao.getSQLState());
