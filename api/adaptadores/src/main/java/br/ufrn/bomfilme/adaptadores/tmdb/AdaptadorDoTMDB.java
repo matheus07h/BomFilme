@@ -1,6 +1,7 @@
 package br.ufrn.bomfilme.adaptadores.tmdb;
 
 import br.ufrn.bomfilme.dominio.CatalogoExternoDeFilmes;
+import br.ufrn.bomfilme.dominio.CreditosDoCatalogo;
 import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import br.ufrn.bomfilme.dominio.FilmeDoCatalogo;
 import br.ufrn.bomfilme.dominio.ParticipacaoDoCatalogo;
@@ -44,8 +45,7 @@ class AdaptadorDoTMDB implements CatalogoExternoDeFilmes {
                 dados.voteAverage(),
                 dados.popularity(),
                 generos(dados),
-                diretores(dados.credits()),
-                elenco(dados.credits()));
+                creditos(comCreditos, dados.credits()));
     }
 
     @Override
@@ -66,6 +66,18 @@ class AdaptadorDoTMDB implements CatalogoExternoDeFilmes {
         return dados.genres().stream()
                 .map(genero -> new ReferenciaExterna(genero.tmdbId(), genero.name()))
                 .toList();
+    }
+
+    /**
+     * Nulo quando a importação não pediu créditos — o que o caso de uso usa para
+     * preservar a direção e o elenco já gravados. Se os créditos foram pedidos e o TMDB
+     * não trouxe nada, devolve listas vazias, que sobrescrevem.
+     */
+    private static CreditosDoCatalogo creditos(boolean pedidos, CreditosTMDBResponse resposta) {
+        if (!pedidos) {
+            return null;
+        }
+        return new CreditosDoCatalogo(diretores(resposta), elenco(resposta));
     }
 
     private static List<ReferenciaExterna> diretores(CreditosTMDBResponse creditos) {

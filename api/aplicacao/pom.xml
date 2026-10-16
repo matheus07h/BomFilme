@@ -12,9 +12,13 @@
 
   <!--
     Os casos de uso alcançam o domínio e mais nada do projeto. Das APIs externas, só
-    as de injeção: `@ApplicationScoped` e `@Inject` são como o CDI liga as peças, e não
-    carregam conhecimento de HTTP nem de banco. Note que não há Jakarta REST, JPA nem
-    Hibernate aqui — um caso de uso que precisasse deles estaria no lugar errado.
+    as de injeção e de transação: `@ApplicationScoped`, `@Inject` e `@Transactional`
+    não carregam conhecimento de HTTP nem de banco. A fronteira da transação é decisão
+    do caso de uso — é ele que sabe o que precisa acontecer tudo ou nada —, então a
+    anotação pertence a esta camada.
+
+    Note que não há Jakarta REST, JPA nem Hibernate aqui: um caso de uso que precisasse
+    deles estaria no lugar errado.
   -->
   <dependencies>
     <dependency>
@@ -29,6 +33,10 @@
     <dependency>
       <groupId>jakarta.inject</groupId>
       <artifactId>jakarta.inject-api</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>jakarta.transaction</groupId>
+      <artifactId>jakarta.transaction-api</artifactId>
     </dependency>
   </dependencies>
 
