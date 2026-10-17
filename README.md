@@ -13,6 +13,7 @@ O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de fi
 - [Arquitetura da API](api/ARCHITECTURE.md): as camadas em detalhe, as convenções de cada uma e o roteiro para adicionar um caso de uso.
 - [Backlog inicial](docs/backlog.md): histórias e tarefas organizadas por prioridade e sprint.
 - [GitHub Project](https://github.com/users/matheus07h/projects/3): quadro com prioridades, estimativas, sprints e responsáveis.
+- [Link para apresentação da Sprint 1](https://youtu.be/klJ6hjxVLYs?si=YuqccERRofqsbJz7): apresentação do que entregamos na Sprint, explicação sobre entidades, CRUD, Swagger, arquitetura e entre outros tópicos.
 
 ## Arquitetura
 
