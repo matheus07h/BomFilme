@@ -1,0 +1,7 @@
+**
+!protos/
+!protos/**
+!services/
+!services/**
+services/gen/
+services/bin/
