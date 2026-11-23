@@ -1,0 +1,40 @@
+syntax = "proto3";
+
+package bomfilme.pagamentos.v1;
+
+option go_package = "github.com/matheus07h/BomFilme/services/gen/bomfilme/pagamentos/v1;pagamentosv1";
+option java_multiple_files = true;
+option java_package = "br.ufrn.bomfilme.adaptadores.pagamentos.v1";
+
+// Simula pagamentos para compras do BomFilme.
+service PagamentoService {
+  // Processa o pagamento simulado de uma compra pendente.
+  rpc ProcessarPagamento(ProcessarPagamentoRequest) returns (ProcessarPagamentoResponse);
+}
+
+// Identifica a compra e informa o valor a ser processado.
+message ProcessarPagamentoRequest {
+  // Identificador da compra pendente na API.
+  int64 compra_id = 1;
+
+  // Valor positivo em centavos de real (BRL).
+  int64 valor_centavos = 2;
+}
+
+// Retorna a decisão do simulador quando a chamada gRPC termina com sucesso.
+message ProcessarPagamentoResponse {
+  // Resultado do pagamento simulado.
+  ResultadoPagamento resultado = 1;
+}
+
+// Representa a decisão do simulador sobre o pagamento.
+enum ResultadoPagamento {
+  // Valor padrão que indica ausência de uma decisão.
+  RESULTADO_PAGAMENTO_UNSPECIFIED = 0;
+
+  // Pagamento aprovado pelo simulador.
+  RESULTADO_PAGAMENTO_APROVADO = 1;
+
+  // Pagamento recusado pelo simulador.
+  RESULTADO_PAGAMENTO_RECUSADO = 2;
+}
