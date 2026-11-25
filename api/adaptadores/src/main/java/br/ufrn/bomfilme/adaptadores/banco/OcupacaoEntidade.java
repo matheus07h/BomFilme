@@ -10,6 +10,7 @@ import jakarta.persistence.JoinColumn;
 import jakarta.persistence.ManyToOne;
 import jakarta.persistence.Table;
 import java.time.OffsetDateTime;
+import java.util.UUID;
 import org.hibernate.annotations.Generated;
 
 /** Presença de uma linha aqui significa assento ocupado naquela sessão. */
@@ -29,6 +30,12 @@ class OcupacaoEntidade {
     @JoinColumn(name = "assento_id", nullable = false)
     AssentoEntidade assento;
 
+    @Column(name = "reserva_id", unique = true)
+    UUID reservaId;
+
+    @Column(name = "estado", nullable = false)
+    String estado = "CONFIRMADO";
+
     @Generated
     @Column(name = "criado_em", nullable = false, insertable = false, updatable = false)
     OffsetDateTime criadoEm;
@@ -39,5 +46,11 @@ class OcupacaoEntidade {
     OcupacaoEntidade(SessaoEntidade sessao, AssentoEntidade assento) {
         this.sessao = sessao;
         this.assento = assento;
+    }
+
+    OcupacaoEntidade(SessaoEntidade sessao, AssentoEntidade assento, UUID reservaId) {
+        this(sessao, assento);
+        this.reservaId = reservaId;
+        this.estado = "RESERVADO";
     }
 }

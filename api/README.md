@@ -109,6 +109,21 @@ Uma rede só é removida quando não tem cinemas, e um cinema só é removido qu
 
 O mesmo vale para a programação: uma sala só é removida sem assentos e sem sessões, um assento só é removido se nunca foi ocupado, e uma sessão só é removida sem assentos ocupados.
 
+### Reserva de assentos durante o pagamento
+
+`ServicoDeSessoes.reservarAssento(sessaoId, assentoId)` devolve um identificador de reserva.
+Enquanto ela estiver pendente, o assento aparece indisponível e outra tentativa de reserva
+recebe conflito. Após a decisão do pagamento, o caso de uso da compra deve chamar
+`confirmarReserva(reservaId)` em caso de aprovação ou `liberarReserva(reservaId)` em caso de
+recusa. Uma reserva confirmada não pode ser liberada; uma reserva liberada não pode ser
+confirmada. Timeout e falha devem ser tratados pela política de recuperação da compra.
+
+A migração `V7` guarda o estado e o identificador na tabela `assento_ocupado`. A restrição
+única de `(sessao_id, assento_id)` já existente protege tanto a reserva quanto a ocupação
+confirmada, inclusive entre várias instâncias da API. O endpoint atual de ocupação direta
+continua representando uma ocupação confirmada; o fluxo de compra da issue #8 usará a
+reserva e só confirmará depois da resposta do pagamento.
+
 ### Conflito de horários
 
 A sessão recebe `salaId`, `filmeId` e `inicio` (ISO 8601 com fuso, por exemplo `2026-11-20T19:00:00-03:00`). O `fim` é calculado pela duração do filme e devolvido na resposta. Duas sessões da mesma sala não podem ocupar o mesmo intervalo `[inicio, fim)`: uma sessão pode começar exatamente quando a anterior termina.

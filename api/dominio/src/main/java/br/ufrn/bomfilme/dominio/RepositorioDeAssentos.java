@@ -3,6 +3,7 @@ package br.ufrn.bomfilme.dominio;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 
 public interface RepositorioDeAssentos {
 
@@ -22,5 +23,13 @@ public interface RepositorioDeAssentos {
 
     Set<Long> ocupadosNaSessao(long sessaoId);
 
+    boolean estaOcupado(long sessaoId, long assentoId);
+
     void ocupar(long sessaoId, long assentoId);
+
+    void reservar(long sessaoId, long assentoId, UUID reservaId);
+
+    boolean confirmarReserva(UUID reservaId);
+
+    boolean liberarReserva(UUID reservaId);
 }
