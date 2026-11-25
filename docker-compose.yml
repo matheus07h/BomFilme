@@ -18,10 +18,8 @@ services:
 
   api:
     build:
-      context: ./api
-      dockerfile: adaptadores/src/main/docker/Dockerfile.jvm
-      additional_contexts:
-        contratos: ./protos
+      context: .
+      dockerfile: api/adaptadores/src/main/docker/Dockerfile.jvm
     environment:
       BOMFILME_DB_URL: jdbc:postgresql://postgres:5432/${BOMFILME_DB_NAME:-bomfilme}
       BOMFILME_DB_USER: ${BOMFILME_DB_USER:-bomfilme}
@@ -32,7 +30,7 @@ services:
       postgres:
         condition: service_healthy
     healthcheck:
-      test: ["CMD-SHELL", "timeout 2 bash -c '</dev/tcp/127.0.0.1/8080'"]
+      test: ["CMD", "curl", "--fail", "--silent", "--output", "/dev/null", "http://127.0.0.1:8080/q/health/ready"]
       interval: 5s
       timeout: 3s
       retries: 12
@@ -52,6 +50,12 @@ services:
     depends_on:
       api:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O", "/dev/null", "http://127.0.0.1:8081/health/ready"]
+      interval: 5s
+      timeout: 3s
+      retries: 12
+      start_period: 5s
     read_only: true
     security_opt:
       - no-new-privileges:true

@@ -11,19 +11,20 @@ O BomFilme reúne o planejamento de um sistema de ingressos e avaliações de fi
 - [Proposta do produto](docs/proposta.md): visão, MVP, entidades e decisões de arquitetura.
 - [Arquitetura do sistema](docs/arquitetura.md): serviços, responsabilidades, fluxo e infraestrutura local.
 - [Arquitetura da API](api/ARCHITECTURE.md): as camadas em detalhe, as convenções de cada uma e o roteiro para adicionar um caso de uso.
+- [Publicação](docs/publicacao.md): infraestrutura, CI, banco gerenciado e verificações de saúde.
 - [Backlog inicial](docs/backlog.md): histórias e tarefas organizadas por prioridade e sprint.
 - [GitHub Project](https://github.com/users/matheus07h/projects/3): quadro com prioridades, estimativas, sprints e responsáveis.
 - [Link para apresentação da Sprint 1](https://youtu.be/klJ6hjxVLYs?si=YuqccERRofqsbJz7): apresentação do que entregamos na Sprint, explicação sobre entidades, CRUD, Swagger, arquitetura e entre outros tópicos.
 
 ## Arquitetura
 
-Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado. Java concentra as regras do negócio, a persistência, as compras e a exclusividade dos assentos. A integração entre os serviços via gRPC será implementada na Sprint 2. As decisões e os limites dos componentes estão detalhados em [docs/arquitetura.md](docs/arquitetura.md).
+Definimos Java/Quarkus para o serviço principal e Go para o pagamento simulado. Java concentra as regras do negócio, a persistência, as compras e a exclusividade dos assentos. Os serviços se comunicam por gRPC. As decisões e os limites dos componentes estão detalhados em [docs/arquitetura.md](docs/arquitetura.md).
 
 | Diretório | Responsabilidade |
 | --- | --- |
 | `api/` | Serviço principal Java/Quarkus |
 | `services/` | Serviço Go de pagamento simulado |
-| `protos/` | Contratos entre serviços, previstos para a Sprint 2 |
+| `protos/` | Contratos gRPC entre os serviços |
 | `docs/` | Proposta, backlog e registro de IA |
 
 ## Equipe
@@ -47,13 +48,13 @@ mise run build
 mise run test
 ```
 
-Para construir as imagens e subir PostgreSQL, API e a base do serviço Go:
+Para construir as imagens e subir PostgreSQL, API e o serviço Go:
 
 ```bash
 mise run up
 ```
 
-A API fica disponível em `http://localhost:8080`. O serviço Go ainda encerra após validar sua inicialização, pois o servidor gRPC pertence à Sprint 2. Use `mise run down` para encerrar o ambiente. As portas e credenciais locais podem ser personalizadas copiando `.env.example` para `.env`.
+A API fica disponível em `http://localhost:8080`. O serviço Go escuta gRPC na porta 50051 e disponibiliza saúde na porta 8081 dentro do Compose. Use `mise run down` para encerrar o ambiente. As portas e credenciais locais podem ser personalizadas copiando `.env.example` para `.env`.
 
 A task `mise run ci` executa lint, build e testes, na mesma ordem usada pelo GitHub Actions.
 

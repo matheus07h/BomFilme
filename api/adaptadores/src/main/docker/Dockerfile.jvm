@@ -1,35 +1,40 @@
 # Build multiestágio do serviço principal do BomFilme.
-# O Compose fornece api/ como contexto principal e protos/ como contexto contratos.
+# O contexto é a raiz do monorepo para incluir os contratos gRPC.
 
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /projeto
 
 # Os poms vêm primeiro e sozinhos: com eles a resolução de dependências fica numa
 # camada que só é invalidada quando um pom muda, não a cada alteração de código.
-COPY pom.xml .
-COPY dominio/pom.xml dominio/
-COPY aplicacao/pom.xml aplicacao/
-COPY adaptadores/pom.xml adaptadores/
+COPY api/pom.xml .
+COPY api/dominio/pom.xml dominio/
+COPY api/aplicacao/pom.xml aplicacao/
+COPY api/adaptadores/pom.xml adaptadores/
 RUN mvn -B -q dependency:go-offline
 
-COPY dominio/src dominio/src
-COPY aplicacao/src aplicacao/src
-COPY adaptadores/src adaptadores/src
-COPY --from=contratos / /protos/
+COPY api/dominio/src dominio/src
+COPY api/aplicacao/src aplicacao/src
+COPY api/adaptadores/src adaptadores/src
+COPY protos/ /protos/
 RUN mvn -B package -DskipTests
 
 # `adaptadores` é o módulo que empacota, por ser o único que conhece framework.
 FROM eclipse-temurin:25-jre
 WORKDIR /aplicacao
+RUN apt-get update && apt-get install --no-install-recommends -y curl \
+    && rm -rf /var/lib/apt/lists/*
 RUN groupadd --system bomfilme \
     && useradd --system --gid bomfilme --home-dir /aplicacao --shell /usr/sbin/nologin bomfilme
 COPY --from=build --chown=bomfilme:bomfilme /projeto/adaptadores/target/quarkus-app/lib/ ./lib/
 COPY --from=build --chown=bomfilme:bomfilme /projeto/adaptadores/target/quarkus-app/*.jar ./
 COPY --from=build --chown=bomfilme:bomfilme /projeto/adaptadores/target/quarkus-app/app/ ./app/
 COPY --from=build --chown=bomfilme:bomfilme /projeto/adaptadores/target/quarkus-app/quarkus/ ./quarkus/
+COPY --chown=bomfilme:bomfilme api/adaptadores/src/main/docker/entrypoint.sh ./entrypoint.sh
 
 EXPOSE 8080
 ENV QUARKUS_PROFILE=prod
 USER bomfilme
+HEALTHCHECK --interval=30s --timeout=3s --start-period=30s \
+    CMD curl --fail --silent --output /dev/null http://127.0.0.1:8080/q/health/ready || exit 1
 # O --add-opens é exigido pelo jboss-threads no Java 24+.
-ENTRYPOINT ["java", "--add-opens", "java.base/java.lang=ALL-UNNAMED", "-jar", "/aplicacao/quarkus-run.jar"]
+ENTRYPOINT ["sh", "/aplicacao/entrypoint.sh"]

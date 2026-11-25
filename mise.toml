@@ -50,6 +50,22 @@ run = "docker compose up --build"
 description = "Encerra o ambiente local"
 run = "docker compose down"
 
+[tasks.migrar]
+description = "Aplica as migracoes Flyway no banco configurado pelas variaveis BOMFILME_DB_*"
+run = """
+set -eu
+: "${BOMFILME_DB_URL:?Defina BOMFILME_DB_URL com a URL JDBC do banco}"
+: "${BOMFILME_DB_USER:?Defina BOMFILME_DB_USER}"
+: "${BOMFILME_DB_PASSWORD:?Defina BOMFILME_DB_PASSWORD}"
+export FLYWAY_URL="$BOMFILME_DB_URL"
+export FLYWAY_USER="$BOMFILME_DB_USER"
+export FLYWAY_PASSWORD="$BOMFILME_DB_PASSWORD"
+docker run --rm \
+  -v "$(pwd)/api/adaptadores/src/main/resources/db/migration:/flyway/sql:ro" \
+  -e FLYWAY_URL -e FLYWAY_USER -e FLYWAY_PASSWORD \
+  flyway/flyway:11.12.0 migrate
+"""
+
 [tasks.ci]
 run_windows = 'mise run lint && mise run build && mise run test'
 description = "Reproduz localmente as verificacoes do GitHub Actions"

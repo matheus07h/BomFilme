@@ -1,0 +1,22 @@
+# Blueprint gratuito: somente a API no Render. O PostgreSQL fica no Neon Free.
+services:
+  - type: web
+    name: bomfilme-api
+    runtime: docker
+    region: virginia
+    plan: free
+    dockerfilePath: ./api/adaptadores/src/main/docker/Dockerfile.jvm
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    healthCheckPath: /q/health/ready
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: BOMFILME_DB_URL
+        sync: false
+      - key: BOMFILME_DB_USER
+        sync: false
+      - key: BOMFILME_DB_PASSWORD
+        sync: false
+      - key: TMDB_API_TOKEN
+        sync: false
