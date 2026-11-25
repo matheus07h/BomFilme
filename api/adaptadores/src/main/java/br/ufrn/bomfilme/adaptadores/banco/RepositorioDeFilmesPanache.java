@@ -17,6 +17,11 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.TransactionPhase;
 
 @ApplicationScoped
 class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheRepository<FilmeEntidade> {
@@ -79,7 +84,9 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
     @Override
     @Transactional
     public Filme salvar(Filme filme) {
-        return ViolacoesDoBanco.gravando(() -> gravar(filme));
+        Filme salvo = ViolacoesDoBanco.gravando(() -> gravar(filme));
+        eventosDeFilme.fire(new DetalheDeFilmeAlterado(salvo.id()));
+        return salvo;
     }
 
     private Filme gravar(Filme filme) {
@@ -113,6 +120,9 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
     public boolean remover(long id) {
         boolean removido = deleteById(id);
         ViolacoesDoBanco.gravando(this::flush);
+        if (removido) {
+            eventosDeFilme.fire(new DetalheDeFilmeAlterado(id));
+        }
         return removido;
     }
 
@@ -149,5 +159,19 @@ class RepositorioDeFilmesPanache implements RepositorioDeFilmes, PanacheReposito
             entidade.elenco.add(new ElencoFilmeEntidade(
                     entidade, pessoa, participacao.personagem(), participacao.ordem()));
         }
+    }
+
+    @Inject
+    Event<DetalheDeFilmeAlterado> eventosDeFilme;
+
+    @Inject
+    @CacheName("filmes-detalhe")
+    Cache cacheDeDetalhes;
+
+    record DetalheDeFilmeAlterado(long id) {}
+
+    void invalidarDetalhe(
+            @Observes(during = TransactionPhase.AFTER_SUCCESS) DetalheDeFilmeAlterado evento) {
+        cacheDeDetalhes.invalidate(evento.id()).await().indefinitely();
     }
 }
