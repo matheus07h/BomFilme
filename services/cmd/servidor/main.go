@@ -2,8 +2,9 @@ package main
 
 import (
 	"context"
-	"log"
+	"log/slog"
 	"net"
+	"net/http"
 	"os"
 	"time"
 
@@ -53,6 +54,7 @@ func (s servidorPagamentos) ProcessarPagamento(
 }
 
 func main() {
+	slog.SetDefault(slog.New(slog.NewJSONHandler(os.Stdout, nil)))
 	cenario := os.Getenv("BOMFILME_PAGAMENTOS_CENARIO")
 	if cenario == "" {
 		cenario = "aprovacao"
@@ -61,18 +63,41 @@ func main() {
 	switch cenario {
 	case "aprovacao", "recusa", "demora", "falha":
 	default:
-		log.Fatalf("cenário de pagamento inválido: %q", cenario)
+		slog.Error("cenário de pagamento inválido", "cenario", cenario)
+		os.Exit(1)
 	}
 
 	listener, err := net.Listen("tcp", ":50051")
 	if err != nil {
-		log.Fatalf("não foi possível abrir a porta gRPC: %v", err)
+		slog.Error("não foi possível abrir a porta gRPC", "erro", err)
+		os.Exit(1)
 	}
+	defer listener.Close()
+
+	saude := http.NewServeMux()
+	saude.HandleFunc("GET /health/live", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	saude.HandleFunc("GET /health/ready", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusOK)
+	})
+	servidorSaude := &http.Server{
+		Addr:              ":8081",
+		Handler:           saude,
+		ReadHeaderTimeout: 5 * time.Second,
+	}
+	go func() {
+		if err := servidorSaude.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+			slog.Error("falha no servidor de saúde", "erro", err)
+			os.Exit(1)
+		}
+	}()
 
 	servidor := grpc.NewServer()
 	pagamentosv1.RegisterPagamentoServiceServer(servidor, servidorPagamentos{cenario: cenario})
-	log.Printf("Servidor gRPC de pagamentos escutando na porta 50051 (cenário: %s)", cenario)
+	slog.Info("servidor gRPC de pagamentos iniciado", "porta", 50051, "cenario", cenario)
 	if err := servidor.Serve(listener); err != nil {
-		log.Fatalf("falha no servidor gRPC: %v", err)
+		slog.Error("falha no servidor gRPC", "erro", err)
+		os.Exit(1)
 	}
 }

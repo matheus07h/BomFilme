@@ -1,0 +1,56 @@
+# Blueprint de implantação. A sincronização cria recursos pagos; revise os planos antes de aplicar.
+databases:
+  - name: bomfilme-db
+    databaseName: bomfilme
+    user: bomfilme
+    postgresMajorVersion: "17"
+    region: virginia
+    plan: 0.1c-256mb
+    ipAllowList: []
+
+services:
+  - type: pserv
+    name: bomfilme-pagamentos
+    runtime: docker
+    region: virginia
+    plan: 0.5c-512mb
+    dockerfilePath: ./services/Dockerfile
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    envVars:
+      - key: BOMFILME_PAGAMENTOS_CENARIO
+        value: aprovacao
+
+  - type: web
+    name: bomfilme-api
+    runtime: docker
+    region: virginia
+    plan: 1c-2g
+    dockerfilePath: ./api/adaptadores/src/main/docker/Dockerfile.jvm
+    dockerContext: .
+    autoDeployTrigger: checksPass
+    healthCheckPath: /q/health/ready
+    envVars:
+      - key: PORT
+        value: "8080"
+      - key: BOMFILME_DB_URL
+        fromDatabase:
+          name: bomfilme-db
+          property: connectionString
+      - key: BOMFILME_DB_USER
+        fromDatabase:
+          name: bomfilme-db
+          property: user
+      - key: BOMFILME_DB_PASSWORD
+        fromDatabase:
+          name: bomfilme-db
+          property: password
+      - key: BOMFILME_PAGAMENTOS_HOST
+        fromService:
+          type: pserv
+          name: bomfilme-pagamentos
+          property: host
+      - key: BOMFILME_PAGAMENTOS_PORT
+        value: "50051"
+      - key: TMDB_API_TOKEN
+        sync: false
