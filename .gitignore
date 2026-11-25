@@ -29,3 +29,6 @@ coverage.html
 
 
 *.log
+
+# Código Go gerado pelo Buf
+/services/gen/

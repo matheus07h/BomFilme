@@ -1,27 +1,32 @@
 [tools]
 go = "1.27.1"
 java = "temurin-25"
+buf = "1.75.0"
 
 [tasks.build]
-run_windows = 'call api\mvnw.cmd -B -f api/pom.xml package -DskipTests && cd services && go build ./...'
 description = "Compila a API Java e o servico Go"
+depends = ["gerar-stubs-go"]
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml package -DskipTests && cd services && go build ./...'
 run = """
 ./api/mvnw -B -f api/pom.xml package -DskipTests
 cd services && go build ./...
 """
 
 [tasks.test]
-run_windows = 'call api\mvnw.cmd -B -f api/pom.xml test && cd services && go test ./...'
 description = "Executa os testes da API Java e do servico Go"
+depends = ["gerar-stubs-go", "imagem-pagamentos-teste"]
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml -Dapi.version=1.44 test && cd services && go test ./...'
 run = """
-./api/mvnw -B -f api/pom.xml test
+./api/mvnw -B -f api/pom.xml -Dapi.version=1.44 test
 cd services && go test ./...
 """
 
 [tasks.lint]
-run_windows = 'call api\mvnw.cmd -B -f api/pom.xml validate && cd services && go vet ./...'
-description = "Valida os projetos Java e Go sem alterar arquivos"
+description = "Valida os contratos e os projetos Java e Go"
+depends = ["gerar-stubs-go"]
+run_windows = 'buf lint protos && call api\mvnw.cmd -B -f api/pom.xml validate && cd services && go vet ./...'
 run = """
+buf lint protos
 ./api/mvnw -B -f api/pom.xml validate
 cd services && go vet ./...
 """
@@ -53,3 +58,11 @@ mise run lint
 mise run build
 mise run test
 """
+
+[tasks.gerar-stubs-go]
+description = "Gera os stubs Go a partir dos contratos gRPC"
+run = "buf generate protos --template protos/buf.gen.yaml"
+
+[tasks.imagem-pagamentos-teste]
+description = "Constroi a imagem Go usada pelos testes de integracao"
+run = "docker build -f services/Dockerfile -t bomfilme/pagamentos:teste ."

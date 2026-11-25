@@ -1,5 +1,5 @@
 # Build multiestágio do serviço principal do BomFilme.
-# Referenciado pelo docker-compose.yml da raiz do monorepo; o contexto é ./api.
+# O Compose fornece api/ como contexto principal e protos/ como contexto contratos.
 
 FROM maven:3.9-eclipse-temurin-25 AS build
 WORKDIR /projeto
@@ -15,6 +15,7 @@ RUN mvn -B -q dependency:go-offline
 COPY dominio/src dominio/src
 COPY aplicacao/src aplicacao/src
 COPY adaptadores/src adaptadores/src
+COPY --from=contratos / /protos/
 RUN mvn -B package -DskipTests
 
 # `adaptadores` é o módulo que empacota, por ser o único que conhece framework.
