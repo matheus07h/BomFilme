@@ -1,8 +1,8 @@
 #!/bin/sh
 set -eu
 
-# Render fornece uma URI postgres://; o driver JDBC precisa do prefixo jdbc:postgresql://.
-# Usuário e senha são passados em variáveis separadas pelo Blueprint.
+# Aceita URL JDBC diretamente ou converte uma URI PostgreSQL para o driver JDBC.
+# Usuário e senha são passados em variáveis separadas pela plataforma.
 case "${BOMFILME_DB_URL:-}" in
   postgres://*|postgresql://*)
     endereco="${BOMFILME_DB_URL#*://}"
