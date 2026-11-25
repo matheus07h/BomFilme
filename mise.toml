@@ -41,6 +41,7 @@ run = """
 ./api/mvnw -B -f api/pom.xml install -DskipTests -Dquarkus.build.skip=true
 cd api/adaptadores && ../mvnw quarkus:dev
 """
+run_windows = 'call api\mvnw.cmd -B -f api/pom.xml install -DskipTests -Dquarkus.build.skip=true && cd api\adaptadores && call ..\mvnw.cmd quarkus:dev'
 
 [tasks.up]
 description = "Sobe o ambiente local com Docker Compose"

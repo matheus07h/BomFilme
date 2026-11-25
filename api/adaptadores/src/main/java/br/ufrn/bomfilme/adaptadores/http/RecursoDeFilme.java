@@ -5,6 +5,7 @@ import br.ufrn.bomfilme.dominio.FiltroDeFilmes;
 import br.ufrn.bomfilme.dominio.Pagina;
 import br.ufrn.bomfilme.dominio.Paginacao;
 import br.ufrn.bomfilme.dominio.ResultadoSincronizacao;
+import io.quarkus.cache.CacheResult;
 import jakarta.inject.Inject;
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
@@ -134,6 +135,7 @@ public class RecursoDeFilme {
             content = @Content(schema = @Schema(implementation = FilmeResponse.class)))
     @APIResponse(responseCode = "404", description = "Não existe filme com esse id",
             content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @CacheResult(cacheName = "filmes-detalhe")
     public FilmeResponse buscarPorId(
             @Parameter(description = "Id do filme no catálogo") @PathParam("id") long id) {
         return FilmeResponse.de(servico.porId(id));

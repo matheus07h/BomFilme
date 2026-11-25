@@ -7,6 +7,12 @@ import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.transaction.Transactional;
 import java.util.List;
+import io.quarkus.cache.Cache;
+import io.quarkus.cache.CacheName;
+import jakarta.enterprise.event.Event;
+import jakarta.enterprise.event.Observes;
+import jakarta.enterprise.event.TransactionPhase;
+import jakarta.inject.Inject;
 
 @ApplicationScoped
 class RepositorioDeGenerosPanache implements RepositorioDeGeneros, PanacheRepository<GeneroEntidade> {
@@ -27,7 +33,22 @@ class RepositorioDeGenerosPanache implements RepositorioDeGeneros, PanacheReposi
                 .orElseGet(() -> ViolacoesDoBanco.gravando(() -> {
                     GeneroEntidade entidade = new GeneroEntidade(tmdbId, nome);
                     persist(entidade);
+                    eventosDeGenero.fire(new GeneroCriado());
                     return entidade;
                 }));
+    }
+
+    @Inject
+    Event<GeneroCriado> eventosDeGenero;
+
+    @Inject
+    @CacheName("generos")
+    Cache cacheDeGeneros;
+
+    record GeneroCriado() {}
+
+    void invalidarCacheDeGeneros(
+            @Observes(during = TransactionPhase.AFTER_SUCCESS) GeneroCriado evento) {
+        cacheDeGeneros.invalidateAll().await().indefinitely();
     }
 }

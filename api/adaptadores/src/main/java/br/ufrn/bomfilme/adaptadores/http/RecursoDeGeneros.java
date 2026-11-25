@@ -12,6 +12,7 @@ import org.eclipse.microprofile.openapi.annotations.media.Content;
 import org.eclipse.microprofile.openapi.annotations.media.Schema;
 import org.eclipse.microprofile.openapi.annotations.responses.APIResponse;
 import org.eclipse.microprofile.openapi.annotations.tags.Tag;
+import io.quarkus.cache.CacheResult;
 
 @Path("/generos")
 @Produces(MediaType.APPLICATION_JSON)
@@ -30,6 +31,7 @@ public class RecursoDeGeneros {
     @APIResponse(responseCode = "200",
             description = "Gêneros em ordem alfabética, vazio quando nenhum filme foi importado",
             content = @Content(schema = @Schema(implementation = GeneroResponse[].class)))
+    @CacheResult(cacheName = "generos")
     public List<GeneroResponse> listar() {
         return servico.listar().stream().map(GeneroResponse::de).toList();
     }
