@@ -13,6 +13,7 @@ import jakarta.transaction.Transactional;
 import java.util.List;
 import java.util.Optional;
 import java.util.Set;
+import java.util.UUID;
 import java.util.stream.Collectors;
 
 @ApplicationScoped
@@ -85,6 +86,18 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
                 .collect(Collectors.toSet());
     }
 
+    @Override
+    public boolean estaOcupado(long sessaoId, long assentoId) {
+        return getEntityManager()
+                .createQuery("""
+                        select count(o) from OcupacaoEntidade o
+                        where o.sessao.id = :sessaoId and o.assento.id = :assentoId
+                        """, Long.class)
+                .setParameter("sessaoId", sessaoId)
+                .setParameter("assentoId", assentoId)
+                .getSingleResult() > 0;
+    }
+
     /**
      * A unicidade de (sessão, assento) fica no banco, o que recusa a segunda de duas
      * ocupações simultâneas do mesmo assento.
@@ -102,5 +115,38 @@ class RepositorioDeAssentosPanache implements RepositorioDeAssentos, PanacheRepo
                     getEntityManager().getReference(AssentoEntidade.class, assentoId)));
             getEntityManager().flush();
         });
+    }
+
+    @Override
+    @Transactional
+    public void reservar(long sessaoId, long assentoId, UUID reservaId) {
+        ViolacoesDoBanco.gravando(() -> {
+            getEntityManager().persist(new OcupacaoEntidade(
+                    getEntityManager().getReference(SessaoEntidade.class, sessaoId),
+                    getEntityManager().getReference(AssentoEntidade.class, assentoId), reservaId));
+            getEntityManager().flush();
+        });
+    }
+
+    @Override
+    @Transactional
+    public boolean confirmarReserva(UUID reservaId) {
+        return getEntityManager().createQuery("""
+                update OcupacaoEntidade o set o.estado = 'CONFIRMADO'
+                where o.reservaId = :id and o.estado = 'RESERVADO'
+                """)
+                .setParameter("id", reservaId)
+                .executeUpdate() == 1;
+    }
+
+    @Override
+    @Transactional
+    public boolean liberarReserva(UUID reservaId) {
+        return getEntityManager().createQuery("""
+                delete from OcupacaoEntidade o
+                where o.reservaId = :id and o.estado = 'RESERVADO'
+                """)
+                .setParameter("id", reservaId)
+                .executeUpdate() == 1;
     }
 }

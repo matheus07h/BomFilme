@@ -6,6 +6,7 @@ import br.ufrn.bomfilme.dominio.ErroDeDominio;
 import br.ufrn.bomfilme.dominio.Filme;
 import br.ufrn.bomfilme.dominio.FiltroDeSessoes;
 import br.ufrn.bomfilme.dominio.RepositorioDeAssentos;
+import br.ufrn.bomfilme.dominio.ReservaDeAssento;
 import br.ufrn.bomfilme.dominio.RepositorioDeFilmes;
 import br.ufrn.bomfilme.dominio.RepositorioDeSalas;
 import br.ufrn.bomfilme.dominio.RepositorioDeSessoes;
@@ -13,9 +14,11 @@ import br.ufrn.bomfilme.dominio.Sessao;
 import br.ufrn.bomfilme.dominio.Pagina;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
+import jakarta.transaction.Transactional;
 import java.time.OffsetDateTime;
 import java.util.List;
 import java.util.Set;
+import java.util.UUID;
 
 /** Casos de uso da programação de sessões e da ocupação de assentos. */
 @ApplicationScoped
@@ -85,12 +88,44 @@ public class ServicoDeSessoes {
      * mesmo assento, só uma sobrevive, e a outra chega ao cliente como 409.
      */
     public void ocuparAssento(long sessaoId, long assentoId) {
+        Assento assento = validarAssentoDaSessao(sessaoId, assentoId);
+        assentos.ocupar(sessaoId, assento.id());
+    }
+
+    /** Reserva o assento até a decisão do pagamento. O banco decide disputas simultâneas. */
+    @Transactional
+    public ReservaDeAssento reservarAssento(long sessaoId, long assentoId) {
+        Assento assento = validarAssentoDaSessao(sessaoId, assentoId);
+        if (assentos.estaOcupado(sessaoId, assentoId)) {
+            throw new ErroDeDominio.Conflito("assento " + assentoId + " já está ocupado nesta sessão");
+        }
+        UUID reservaId = UUID.randomUUID();
+        assentos.reservar(sessaoId, assento.id(), reservaId);
+        return new ReservaDeAssento(reservaId, sessaoId, assentoId);
+    }
+
+    /** Só a reserva vencedora pode confirmar a ocupação após o pagamento. */
+    @Transactional
+    public void confirmarReserva(UUID reservaId) {
+        if (!assentos.confirmarReserva(reservaId)) {
+            throw new ErroDeDominio.Conflito("reserva não está pendente de confirmação");
+        }
+    }
+
+    /** Uma recusa de pagamento libera apenas a reserva correspondente. */
+    @Transactional
+    public void liberarReserva(UUID reservaId) {
+        if (!assentos.liberarReserva(reservaId)) {
+            throw new ErroDeDominio.Conflito("reserva não está pendente de liberação");
+        }
+    }
+
+    private Assento validarAssentoDaSessao(long sessaoId, long assentoId) {
         Sessao sessao = porId(sessaoId);
-        Assento assento = assentos.porId(assentoId)
+        return assentos.porId(assentoId)
                 .filter(candidato -> candidato.salaId().equals(sessao.salaId()))
                 .orElseThrow(() -> new ErroDeDominio.NaoEncontrado(
                         "assento " + assentoId + " não pertence a esta sessão"));
-        assentos.ocupar(sessao.id(), assento.id());
     }
 
     /**
