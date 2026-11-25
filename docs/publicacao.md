@@ -10,19 +10,24 @@ O Flyway aplica as migrações na inicialização da API.
 
 1. Crie um projeto PostgreSQL no plano Free do Neon e anote o host, o nome do
    banco, o usuário e a senha. Mantenha esses dados fora do repositório.
-2. Conecte o repositório GitHub ao Render e crie um Blueprint com o `render.yaml`
+2. No terminal, forneça `BOMFILME_DB_URL`, `BOMFILME_DB_USER` e
+   `BOMFILME_DB_PASSWORD` como variáveis de ambiente. A URL tem o formato
+   `jdbc:postgresql://HOST/BANCO?sslmode=require`. Execute `mise run migrar`
+   para aplicar as migrações no Neon por uma task. O Flyway do serviço também
+   confere as migrações na inicialização.
+3. Conecte o repositório GitHub ao Render e crie um Blueprint com o `render.yaml`
    da branch `main`, após a integração da PR. Confirme que o único recurso a
    criar é `bomfilme-api` com plano `free`; não aprove recursos pagos.
-3. Preencha os segredos solicitados pelo Blueprint:
+4. Preencha os segredos solicitados pelo Blueprint:
    - `BOMFILME_DB_URL`: `jdbc:postgresql://HOST/BANCO?sslmode=require`, com o
      host e o banco copiados do Neon, sem usuário ou senha na URL;
    - `BOMFILME_DB_USER` e `BOMFILME_DB_PASSWORD`: credenciais do Neon;
    - `TMDB_API_TOKEN`: token da API TMDB.
-4. Aguarde a implantação e confira os logs do Flyway e o health check
+5. Aguarde a implantação e confira os logs do Flyway e o health check
    `/q/health/ready`. Faça uma requisição a `/q/openapi` sem o serviço Go no ar.
    Se a API ficar disponível, registre sua URL `onrender.com` no README.
-5. Guarde evidências do plano e das variáveis configuradas (sem mostrar valores
-   secretos), dos logs de migração, do health check e da resposta da API. A
+6. Guarde evidências do plano e das variáveis configuradas (sem mostrar valores
+   secretos), da saída da task de migração, do health check e da resposta da API. A
    rúbrica da Sprint 2 aceita essas evidências mesmo sem URL pública funcional.
 
 O Blueprint usa `checksPass` para implantar após a aprovação das verificações
