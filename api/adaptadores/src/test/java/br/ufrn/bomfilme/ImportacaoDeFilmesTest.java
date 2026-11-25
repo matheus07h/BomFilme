@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicLong;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.junit.jupiter.api.Test;
+import static org.hamcrest.Matchers.not;
 
 /**
  * Regressões apontadas no review do PR #26.
@@ -155,5 +156,27 @@ class ImportacaoDeFilmesTest {
                 .body("status", is(500))
                 // a mensagem não expõe detalhe interno; a causa fica no log
                 .body("detail", is("erro interno ao acessar o banco de dados"));
+    }
+
+    @Test
+    void importarFilmeComGeneroNovoAtualizaListaEmCache() {
+        long tmdbId = tmdbIdUnico();
+        long generoId = tmdbIdUnico();
+        String nomeDoGenero = "Gênero de teste " + generoId;
+
+        when(clienteTMDB.buscarPorId(eq(tmdbId), isNull()))
+                .thenReturn(filme(tmdbId, "Filme de teste", "Sinopse",
+                        List.of(new GeneroTMDBResponse(generoId, nomeDoGenero)), null));
+
+        given().when().get("/generos")
+                .then().statusCode(200)
+                .body("nome", not(hasItem(nomeDoGenero)));
+
+        given().when().post("/filmes/importar-basico/{t}", tmdbId)
+                .then().statusCode(200);
+
+        given().when().get("/generos")
+                .then().statusCode(200)
+                .body("nome", hasItem(nomeDoGenero));
     }
 }
