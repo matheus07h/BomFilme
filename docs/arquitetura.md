@@ -48,15 +48,19 @@ Essa escolha custa um pouco de cerimônia no build e paga em duas coisas: o núc
 negócio sobrevive a uma troca de framework, e a regra não depende de ninguém lembrar
 dela.
 
-## Fluxo de compra previsto
+## Fluxo de compra
 
-1. A API cria a compra pendente e reserva o assento com uma operação segura no banco.
-2. A API chama o serviço Go com prazo limite.
-3. Uma aprovação confirma a compra e gera o ingresso.
-4. Uma recusa libera a reserva e não gera ingresso confirmado.
-5. Timeout ou falha de comunicação nunca confirma a compra automaticamente.
+Implementado em `ServicoDeCompras` (issue #8):
 
-A política de expiração e recuperação das reservas será definida junto da implementação da compra na Sprint 2. Essa decisão evita registrar como pronta uma regra que ainda precisa de testes de concorrência e integração.
+1. A API cria a compra `PENDENTE` e reserva o assento (estado `RESERVADO` em `assento_ocupado`, da issue #7) na mesma transação. A unicidade de (sessão, assento) no banco recusa uma segunda reserva do mesmo assento.
+2. A API chama o serviço Go com prazo de 1 segundo, fora de qualquer transação.
+3. Uma aprovação muda a compra para `CONFIRMADA`, confirma a reserva e emite o ingresso, na mesma transação. A troca de status é condicional, então uma compra nunca recebe dois ingressos.
+4. Uma recusa muda a compra para `RECUSADA`, libera a reserva e não emite ingresso.
+5. Timeout ou falha de comunicação deixam a compra `PENDENTE`, com a reserva em `RESERVADO` e sem ingresso. Sem resposta não sabemos se houve cobrança, então a compra não é confirmada nem liberada automaticamente.
+
+Os testes em `api/adaptadores/src/test/java/br/ufrn/bomfilme/compras/` sobem o serviço Go em cada cenário (aprovação, recusa, demora e falha) e verificam a compra, o ingresso e a reserva gravados no banco.
+
+Ainda falta definir a política de expiração e recuperação das compras que ficam pendentes depois de um timeout ou de uma falha.
 
 ## Infraestrutura local
 

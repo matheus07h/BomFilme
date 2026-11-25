@@ -113,16 +113,19 @@ O mesmo vale para a programação: uma sala só é removida sem assentos e sem s
 
 `ServicoDeSessoes.reservarAssento(sessaoId, assentoId)` devolve um identificador de reserva.
 Enquanto ela estiver pendente, o assento aparece indisponível e outra tentativa de reserva
-recebe conflito. Após a decisão do pagamento, o caso de uso da compra deve chamar
-`confirmarReserva(reservaId)` em caso de aprovação ou `liberarReserva(reservaId)` em caso de
-recusa. Uma reserva confirmada não pode ser liberada; uma reserva liberada não pode ser
-confirmada. Timeout e falha devem ser tratados pela política de recuperação da compra.
+recebe conflito. Uma reserva confirmada não pode ser liberada; uma reserva liberada não pode
+ser confirmada.
+
+A compra (`ServicoDeCompras`) usa essa mesma reserva pelas portas `RepositorioDeAssentos.reservar`,
+`confirmarReserva` e `liberarReserva`, chamadas de dentro do repositório de compras para que a
+compra e a reserva mudem na mesma transação: a aprovação confirma a reserva e a recusa a libera.
+No timeout e na falha, a reserva continua `RESERVADO` junto com a compra pendente.
 
 A migração `V7` guarda o estado e o identificador na tabela `assento_ocupado`. A restrição
 única de `(sessao_id, assento_id)` já existente protege tanto a reserva quanto a ocupação
 confirmada, inclusive entre várias instâncias da API. O endpoint atual de ocupação direta
-continua representando uma ocupação confirmada; o fluxo de compra da issue #8 usará a
-reserva e só confirmará depois da resposta do pagamento.
+continua representando uma ocupação confirmada; o fluxo de compra da issue #8 usa a
+reserva e só confirma depois da resposta do pagamento.
 
 ### Conflito de horários
 
