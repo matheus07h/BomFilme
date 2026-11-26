@@ -1,15 +1,16 @@
 package br.ufrn.bomfilme.compras;
 
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import br.ufrn.bomfilme.adaptadores.pagamentos.ServidorGoDeTeste;
 import br.ufrn.bomfilme.dominio.Compra;
-import br.ufrn.bomfilme.dominio.RepositorioDeCompras;
 import br.ufrn.bomfilme.dominio.StatusDaCompra;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.common.ResourceArg;
 import io.quarkus.test.junit.QuarkusTest;
-import jakarta.inject.Inject;
 import org.junit.jupiter.api.Test;
 
 @QuarkusTest
@@ -19,13 +20,11 @@ import org.junit.jupiter.api.Test;
         restrictToAnnotatedClass = true)
 class CompraRecusadaTest extends CenarioDeCompra {
 
-    @Inject
-    RepositorioDeCompras repositorio;
-
     @Test
     void recusaNaoConfirmaNaoEmiteIngressoELiberaOAssento() {
         Compra compra = comprarAssentoLivre();
 
+        assertEquals(StatusDaCompra.RECUSADA, compra.status());
         assertStatusGravado(compra, StatusDaCompra.RECUSADA);
         assertSemIngresso(compra);
         assertAssentoLivre(compra);
@@ -36,7 +35,26 @@ class CompraRecusadaTest extends CenarioDeCompra {
         Compra compra = comprarAssentoLivre();
 
         assertTrue(repositorio.confirmar(compra.id()).isEmpty());
-        assertStatusGravado(compras.porId(compra.id()), StatusDaCompra.RECUSADA);
+        assertStatusGravado(compra, StatusDaCompra.RECUSADA);
         assertSemIngresso(compra);
+    }
+
+    @Test
+    void rotaDevolveACompraRecusadaSemIngresso() {
+        comprarPelaRota()
+                .statusCode(201)
+                .body("status", is("RECUSADA"))
+                .body("ingresso", nullValue());
+    }
+
+    @Test
+    void recuperacaoRecusaCompraPendenteELiberaOAssento() {
+        Compra compra = compraPendente();
+
+        recuperarTodasAsPendentes();
+
+        assertStatusGravado(compra, StatusDaCompra.RECUSADA);
+        assertSemIngresso(compra);
+        assertAssentoLivre(compra);
     }
 }

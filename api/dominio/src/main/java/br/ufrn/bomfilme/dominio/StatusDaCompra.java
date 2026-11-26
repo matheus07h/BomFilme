@@ -8,7 +8,8 @@ public enum StatusDaCompra {
      *
      * <p>É também o estado em que a compra fica quando o serviço de pagamentos não
      * responde no prazo ou está fora: sem resposta, não sabemos se houve cobrança, então
-     * a compra não é confirmada nem recusada automaticamente.
+     * a compra não é confirmada nem recusada na hora. A recuperação periódica decide
+     * depois (veja {@code ServicoDeCompras.recuperarPendentesCriadasAntesDe}).
      */
     PENDENTE,
 
@@ -16,5 +17,11 @@ public enum StatusDaCompra {
     CONFIRMADA,
 
     /** O pagamento foi recusado e a reserva do assento foi liberada. */
-    RECUSADA
+    RECUSADA,
+
+    /**
+     * A compra ficou pendente além do prazo, o serviço de pagamentos continuou sem
+     * responder na recuperação, e a reserva do assento foi liberada.
+     */
+    EXPIRADA
 }

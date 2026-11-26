@@ -1,5 +1,7 @@
 package br.ufrn.bomfilme.dominio;
 
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -26,6 +28,12 @@ public interface RepositorioDeCompras {
 
     /** Marca uma compra pendente como recusada e libera a reserva do assento. */
     boolean recusar(long compraId);
+
+    /** Marca uma compra pendente como expirada e libera a reserva do assento. */
+    boolean expirar(long compraId);
+
+    /** Compras ainda pendentes criadas antes do instante informado, da mais antiga à mais nova. */
+    List<Compra> pendentesCriadasAntesDe(OffsetDateTime limite);
 
     Optional<Ingresso> ingressoDaCompra(long compraId);
 }

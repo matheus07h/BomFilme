@@ -12,6 +12,7 @@ import br.ufrn.bomfilme.dominio.Sessao;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import java.lang.System.Logger.Level;
+import java.time.OffsetDateTime;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -55,7 +56,8 @@ public class ServicoDeCompras {
      *   <li>Recusa: a compra é recusada, a reserva é liberada e não há ingresso.</li>
      *   <li>Timeout ou falha de comunicação: a compra continua pendente, com o assento
      *       reservado e sem ingresso. Sem resposta não sabemos se houve cobrança, então
-     *       nem confirmamos nem liberamos o assento automaticamente.</li>
+     *       nem confirmamos nem liberamos o assento na hora: quem decide é
+     *       {@link #recuperarPendentesCriadasAntesDe}.</li>
      * </ul>
      */
     public Compra comprar(long sessaoId, long assentoId) {
@@ -82,11 +84,54 @@ public class ServicoDeCompras {
             return compra;
         }
 
-        switch (resultado) {
-            case APROVADO -> compras.confirmar(compra.id());
-            case RECUSADO -> compras.recusar(compra.id());
-        }
+        aplicar(compra, resultado);
         return porId(compra.id());
+    }
+
+    /**
+     * Decide as compras que ficaram pendentes e foram criadas antes de {@code limite}.
+     *
+     * <p>Para cada uma, pede o pagamento de novo ao serviço Go, que identifica a compra
+     * pelo id. Aprovação confirma e emite o ingresso; recusa libera o assento; sem
+     * resposta outra vez, a compra expira e o assento é liberado. Assim nenhum assento
+     * fica preso para sempre, e nenhuma compra é confirmada sem uma aprovação.
+     *
+     * <p>Uma compra que falhe não interrompe as outras. Se duas instâncias recuperarem a
+     * mesma compra ao mesmo tempo, a troca de status condicional deixa só uma decidir.
+     *
+     * @return quantas compras foram decididas
+     */
+    public int recuperarPendentesCriadasAntesDe(OffsetDateTime limite) {
+        int decididas = 0;
+        for (Compra compra : compras.pendentesCriadasAntesDe(limite)) {
+            try {
+                if (recuperar(compra)) {
+                    decididas++;
+                }
+            } catch (RuntimeException erro) {
+                LOG.log(Level.ERROR, "falha ao recuperar a compra " + compra.id(), erro);
+            }
+        }
+        return decididas;
+    }
+
+    private boolean recuperar(Compra compra) {
+        ProcessadorDePagamentos.Resultado resultado;
+        try {
+            resultado = pagamentos.processar(compra.id(), compra.valorCentavos());
+        } catch (ErroDeDominio.ServicoExternoIndisponivel erro) {
+            LOG.log(Level.WARNING, "compra {0} expirou sem resposta do pagamento: {1}",
+                    compra.id(), erro.getMessage());
+            return compras.expirar(compra.id());
+        }
+        return aplicar(compra, resultado);
+    }
+
+    private boolean aplicar(Compra compra, ProcessadorDePagamentos.Resultado resultado) {
+        return switch (resultado) {
+            case APROVADO -> compras.confirmar(compra.id()).isPresent();
+            case RECUSADO -> compras.recusar(compra.id());
+        };
     }
 
     public Compra porId(long id) {

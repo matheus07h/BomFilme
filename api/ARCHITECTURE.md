@@ -13,9 +13,11 @@ A visão geral do sistema, com o serviço Go e o fluxo de compra, está em
 | --- | --- | --- | --- |
 | `dominio` | `br.ufrn.bomfilme.dominio` | Registros do negócio (`Cinema`, `Sala`, `Sessao`, `Assento`, `Filme`, `Genero`, `Pessoa`, `Participacao`, `Compra`, `Ingresso`), as portas de repositório, as portas `CatalogoExternoDeFilmes` e `ProcessadorDePagamentos`, os filtros de consulta, `Pagina`, `Busca` e `ErroDeDominio` | **Nada.** O `<dependencies>` do pom está vazio |
 | `aplicacao` | `br.ufrn.bomfilme.aplicacao` | Um caso de uso por agregado: `ServicoDeRedes`, `ServicoDeCinemas`, `ServicoDeSalas`, `ServicoDeSessoes`, `ServicoDeFilmes`, `ServicoDeGeneros`, `ServicoDeCompras` | `dominio` + as anotações de injeção |
-| `adaptadores` | `br.ufrn.bomfilme.adaptadores.http` | Recursos REST, `Problema`/`Problemas`, os mapeadores de exceção, DTOs de entrada (`Nova*`/`Novo*`) e de saída (`FilmeResponse`, ...), `ConfiguracaoOpenApi` | `aplicacao`, `dominio` |
+| `adaptadores` | `br.ufrn.bomfilme.adaptadores.http` | Recursos REST, `Problema`/`Problemas`, os mapeadores de exceção, DTOs de entrada (`Nova*`/`Novo*`) e de saída (`FilmeResponse`, `CompraResponse`, ...), `ConfiguracaoOpenApi` | `aplicacao`, `dominio` |
 | | `…adaptadores.banco` | Entidades JPA (`*Entidade`), repositórios Panache, `ViolacoesDoBanco`, `Paginas` | `dominio` |
 | | `…adaptadores.tmdb` | `ClienteTMDB`, os DTOs do TMDB e `AdaptadorDoTMDB` | `dominio` |
+| | `…adaptadores.pagamentos` | `AdaptadorDePagamentosGrpc`, o cliente gRPC do serviço Go | `dominio` |
+| | `…adaptadores.agendamento` | `RecuperacaoDeComprasPendentes`, a tarefa que dispara a recuperação das compras pendentes | `aplicacao` |
 
 Direção da dependência: `adaptadores → aplicacao → dominio`. A seta só aponta para
 dentro, e **o build garante isso** — não é convenção. Um `import jakarta.persistence`

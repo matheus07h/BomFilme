@@ -14,7 +14,7 @@ create table if not exists compra (
     criado_em      timestamptz not null default now(),
     constraint compra_reserva_unica unique (reserva_id),
     constraint compra_valor_positivo check (valor_centavos > 0),
-    constraint compra_status_valido check (status in ('PENDENTE', 'CONFIRMADA', 'RECUSADA'))
+    constraint compra_status_valido check (status in ('PENDENTE', 'CONFIRMADA', 'RECUSADA', 'EXPIRADA'))
 );
 
 -- No máximo um ingresso por compra, mesmo que a confirmação seja repetida.
@@ -28,3 +28,6 @@ create table if not exists ingresso (
 );
 
 create index if not exists compra_sessao_assento_idx on compra (sessao_id, assento_id);
+
+-- A recuperação procura só as compras pendentes, pela data de criação.
+create index if not exists compra_pendente_criado_em_idx on compra (criado_em) where status = 'PENDENTE';

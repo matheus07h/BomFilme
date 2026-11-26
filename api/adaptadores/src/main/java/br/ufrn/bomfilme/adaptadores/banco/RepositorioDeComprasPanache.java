@@ -7,9 +7,12 @@ import br.ufrn.bomfilme.dominio.RepositorioDeAssentos;
 import br.ufrn.bomfilme.dominio.RepositorioDeCompras;
 import br.ufrn.bomfilme.dominio.StatusDaCompra;
 import io.quarkus.hibernate.orm.panache.PanacheRepository;
+import io.quarkus.panache.common.Sort;
 import jakarta.enterprise.context.ApplicationScoped;
 import jakarta.inject.Inject;
 import jakarta.transaction.Transactional;
+import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
 
@@ -83,6 +86,34 @@ class RepositorioDeComprasPanache implements RepositorioDeCompras, PanacheReposi
             throw reservaForaDoEstado(compraId);
         }
         return true;
+    }
+
+    @Override
+    @Transactional
+    public boolean expirar(long compraId) {
+        Optional<UUID> reservaId = reservaDaCompraPendente(compraId, StatusDaCompra.EXPIRADA);
+        if (reservaId.isEmpty()) {
+            return false;
+        }
+        if (!assentos.liberarReserva(reservaId.get())) {
+            throw reservaForaDoEstado(compraId);
+        }
+        return true;
+    }
+
+    /**
+     * Transacional para as entidades carregadas aqui não ficarem na sessão de quem chamou:
+     * a recuperação muda o status de cada compra em outra transação, e uma leitura seguinte
+     * na mesma sessão devolveria a cópia antiga, ainda PENDENTE.
+     */
+    @Override
+    @Transactional
+    public List<Compra> pendentesCriadasAntesDe(OffsetDateTime limite) {
+        return find("status = ?1 and criadoEm < ?2", Sort.by("criadoEm").and("id"),
+                StatusDaCompra.PENDENTE, limite)
+                .stream()
+                .map(CompraEntidade::paraDominio)
+                .toList();
     }
 
     @Override

@@ -1,5 +1,9 @@
 package br.ufrn.bomfilme.compras;
 
+import static org.hamcrest.Matchers.containsString;
+import static org.hamcrest.Matchers.is;
+import static org.hamcrest.Matchers.nullValue;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 
 import br.ufrn.bomfilme.adaptadores.pagamentos.ServidorGoDeTeste;
@@ -23,6 +27,7 @@ class CompraComTimeoutTest extends CenarioDeCompra {
     void timeoutDeixaACompraPendenteESemIngresso() {
         Compra compra = comprarAssentoLivre();
 
+        assertEquals(StatusDaCompra.PENDENTE, compra.status());
         assertStatusGravado(compra, StatusDaCompra.PENDENTE);
         assertSemIngresso(compra);
         assertAssentoReservado(compra);
@@ -34,5 +39,37 @@ class CompraComTimeoutTest extends CenarioDeCompra {
 
         assertThrows(ErroDeDominio.Conflito.class,
                 () -> compras.comprar(sessao.id(), assento.id()));
+    }
+
+    @Test
+    void rotaDevolveACompraPendenteSemIngresso() {
+        comprarPelaRota()
+                .statusCode(202)
+                .header("Location", containsString("/compras/"))
+                .body("status", is("PENDENTE"))
+                .body("ingresso", nullValue());
+    }
+
+    @Test
+    void recuperacaoSemRespostaExpiraACompraELiberaOAssento() {
+        Compra compra = comprarAssentoLivre();
+
+        recuperarTodasAsPendentes();
+
+        assertStatusGravado(compra, StatusDaCompra.EXPIRADA);
+        assertSemIngresso(compra);
+        assertAssentoLivre(compra);
+    }
+
+    @Test
+    void assentoDeCompraExpiradaPodeSerCompradoDeNovo() {
+        Compra expirada = comprarAssentoLivre();
+        recuperarTodasAsPendentes();
+
+        Compra nova = compras.comprar(sessao.id(), assento.id());
+
+        assertStatusGravado(expirada, StatusDaCompra.EXPIRADA);
+        assertEquals(StatusDaCompra.PENDENTE, nova.status());
+        assertAssentoReservado(nova);
     }
 }
