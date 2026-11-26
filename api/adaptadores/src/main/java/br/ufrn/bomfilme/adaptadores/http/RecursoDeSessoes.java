@@ -1,11 +1,14 @@
 package br.ufrn.bomfilme.adaptadores.http;
 
+import br.ufrn.bomfilme.aplicacao.ServicoDeCompras;
 import br.ufrn.bomfilme.aplicacao.ServicoDeSessoes;
+import br.ufrn.bomfilme.dominio.Compra;
 import br.ufrn.bomfilme.dominio.AssentoDisponibilidade;
 import br.ufrn.bomfilme.dominio.FiltroDeSessoes;
 import br.ufrn.bomfilme.dominio.Paginacao;
 import br.ufrn.bomfilme.dominio.Sessao;
 import br.ufrn.bomfilme.dominio.Pagina;
+import br.ufrn.bomfilme.dominio.StatusDaCompra;
 import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Max;
@@ -40,6 +43,9 @@ public class RecursoDeSessoes {
 
     @Inject
     ServicoDeSessoes servico;
+
+    @Inject
+    ServicoDeCompras compras;
 
     @GET
     @Operation(summary = "Lista as sessões",
@@ -166,5 +172,40 @@ public class RecursoDeSessoes {
             @Parameter(description = "Id do assento") @PathParam("assentoId") long assentoId) {
         servico.ocuparAssento(id, assentoId);
         return Response.status(Response.Status.CREATED).build();
+    }
+
+    @POST
+    @Path("/{id}/compras")
+    @Consumes(MediaType.APPLICATION_JSON)
+    @Operation(summary = "Compra um assento da sessão",
+            description = """
+                    Reserva o assento e pede o pagamento ao serviço de pagamentos. Se for \
+                    aprovado, a compra volta CONFIRMADA com o ingresso; se for recusado, volta \
+                    RECUSADA e o assento é liberado. Se o pagamento não responder a tempo, a \
+                    compra volta PENDENTE, sem ingresso, com o assento reservado: depois de 10 \
+                    minutos ela é recuperada e acompanhada em GET /compras/{id}.""")
+    @APIResponse(responseCode = "201",
+            description = "Pagamento decidido: compra CONFIRMADA com ingresso, ou RECUSADA sem ingresso",
+            content = @Content(schema = @Schema(implementation = CompraResponse.class)))
+    @APIResponse(responseCode = "202",
+            description = "Pagamento sem resposta: compra PENDENTE, sem ingresso, com o assento reservado",
+            content = @Content(schema = @Schema(implementation = CompraResponse.class)))
+    @APIResponse(responseCode = "400", description = "Corpo ausente ou assentoId inválido",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "404", description = "A sessão não existe, ou o assento não pertence à sala da sessão",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    @APIResponse(responseCode = "409", description = "O assento já está ocupado ou reservado nessa sessão",
+            content = @Content(mediaType = Problema.MEDIA_TYPE, schema = @Schema(implementation = Problema.class)))
+    public Response comprar(
+            @Parameter(description = "Id da sessão") @PathParam("id") long id,
+            @Valid @NotNull(message = "o corpo da requisição é obrigatório") NovaCompra nova) {
+        Compra compra = compras.comprar(id, nova.assentoId());
+        Response.Status status = compra.status() == StatusDaCompra.PENDENTE
+                ? Response.Status.ACCEPTED
+                : Response.Status.CREATED;
+        return Response.status(status)
+                .location(URI.create("/compras/" + compra.id()))
+                .entity(CompraResponse.de(compra, compras.ingressoDaCompra(compra.id())))
+                .build();
     }
 }

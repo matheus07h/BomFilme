@@ -39,6 +39,8 @@ class OpenApiTest {
                 .body("paths", hasKey("/sessoes/{id}"))
                 .body("paths", hasKey("/sessoes/{id}/assentos"))
                 .body("paths", hasKey("/sessoes/{id}/assentos/{assentoId}"))
+                .body("paths", hasKey("/sessoes/{id}/compras"))
+                .body("paths", hasKey("/compras/{id}"))
                 .body("paths", hasKey("/filmes"))
                 .body("paths", hasKey("/filmes/{id}"))
                 .body("paths", hasKey("/filmes/importar-basico/{tmdbId}"))
